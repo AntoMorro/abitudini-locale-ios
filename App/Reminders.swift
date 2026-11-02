@@ -7,6 +7,7 @@ import UserNotifications
     static func sync(_ db: HabitDatabase) async -> String {
         let center = UNUserNotificationCenter.current()
         let pending = await center.pendingNotificationRequests()
+        guard !Task.isCancelled else { return "" }
         center.removePendingNotificationRequests(withIdentifiers: pending.filter { $0.identifier.hasPrefix("habit.") }.map(\.identifier))
         let count = count(db)
         guard count <= 60 else { return "Troppi promemoria: riduci orari o giorni (massimo 60 combinazioni)." }
@@ -17,6 +18,7 @@ import UserNotifications
             for h in db.habits where !h.archived {
                 let p = db.plan(h)
                 for minute in p.reminders { for day in p.weekdays {
+                    guard !Task.isCancelled else { return "" }
                     var components = DateComponents(); components.weekday = day; components.hour = minute/60; components.minute = minute%60
                     let content = UNMutableNotificationContent(); content.title = h.title; content.body = p.description.isEmpty ? "Un piccolo passo per la tua abitudine." : p.description; content.sound = .default
                     let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)

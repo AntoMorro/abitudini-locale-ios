@@ -29,6 +29,7 @@ struct HabitSettings: View {
     @State private var exporting = false
     @State private var importing = false
     @State private var backup = HabitBackupDocument(data: Data())
+    @State private var exportType: UTType = .json
     @State private var pending: Data?
     @State private var restore = false
     @State private var emergency = false
@@ -39,7 +40,7 @@ struct HabitSettings: View {
                     NavigationLink("Riordina abitudini") { HabitOrder() }
                     Button("Abilita promemoria") { Task { do { _ = try await HabitReminders.authorize(); store.syncReminders() } catch { store.problem = error.localizedDescription } } }
                     Text(store.reminderStatus).font(.caption).foregroundStyle(.secondary)
-                    ShareLink(item: Tracker.csv(store.db)) { Label("Esporta tutte le registrazioni CSV", systemImage: "tablecells") }
+                    Button("Esporta tutte le registrazioni CSV") { backup = HabitBackupDocument(data: Data(Tracker.csv(store.db).utf8)); exportType = .commaSeparatedText; exporting = true }
                 }
                 Section("Tempo di utilizzo") {
                     NavigationLink("Blocchi e regole di sblocco") { BlocksView() }
@@ -54,16 +55,16 @@ struct HabitSettings: View {
                     Button("Aggiorna passi, allenamenti e meditazione") { Task { await store.refreshHealth() } }
                     Text("Aggiornamento quando apri l’app o premi Aggiorna. Un valore zero può significare attività assente o lettura non concessa: Apple non comunica la differenza.").font(.caption).foregroundStyle(.secondary)
                     #else
-                    Text("Disponibile nei pacchetti Widget e Screen Time con HealthKit correttamente firmato.").font(.caption).foregroundStyle(.secondary)
+                    Text("Disponibile nel pacchetto completo con HealthKit correttamente firmato.").font(.caption).foregroundStyle(.secondary)
                     #endif
                 }
                 Section("Widget e schermata di blocco") {
                     LabeledContent("Archivio condiviso", value: store.shared ? "Disponibile" : "Non attivo in questo profilo")
-                    Text("Installa il pacchetto con widget, poi tieni premuta la schermata Home e aggiungi Abitudini Locale. I widget mostrano le prime abitudini attive. Le Live Activity richiedono anche il consenso nelle impostazioni iOS.").font(.caption).foregroundStyle(.secondary)
+                    Text("Installa il pacchetto con widget senza rimuovere le estensioni in Sideloadly. Apri l’app, tieni premuta la Home e scegli Modifica → Aggiungi widget → Abitudini Locale. Da Modifica widget scegli l’abitudine. Serve un App Group valido nella firma: la compilazione non garantisce che Sideloadly lo conservi. Le Live Activity richiedono anche il consenso iOS.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Aspetto") { Picker("Tema", selection: Binding(get: { store.db.theme }, set: { theme in store.change { $0.theme = theme } })) { Text("Scuro").tag("dark"); Text("Chiaro").tag("light"); Text("Come iPhone").tag("system") } }
                 Section("Archivio e iCloud Drive") {
-                    Button("Esporta backup in File") { do { backup = HabitBackupDocument(data: try JSONEncoder().encode(store.db)); exporting = true } catch { store.problem = error.localizedDescription } }
+                    Button("Esporta backup in File") { do { backup = HabitBackupDocument(data: try JSONEncoder().encode(store.db)); exportType = .json; exporting = true } catch { store.problem = error.localizedDescription } }
                     Button("Ripristina backup") { importing = true }
                     Text("Scegli iCloud Drive nel pannello File per conservare una copia. Il backup è manuale. Dopo un ripristino le regole sono disattivate e le app vanno selezionate di nuovo prima di riattivarle.").font(.caption).foregroundStyle(.secondary)
                 }
@@ -77,7 +78,7 @@ struct HabitSettings: View {
                     Text("Non sono inclusi account/sync cloud, blocchi per posizione o Bluetooth, NFC, integrazioni dirette AnkiWeb, Duolingo, KOReader, Chess.com e servizi multimediali. Il timer di studio non include cicli automatici pausa/lavoro. Le funzioni disponibili dipendono dal pacchetto e dai profili di firma.").font(.caption).foregroundStyle(.secondary)
                 }
             }.navigationTitle("impostazioni")
-            .fileExporter(isPresented: $exporting, document: backup, contentType: .json, defaultFilename: "AbitudiniLocale-backup") { result in if case .failure(let e) = result { store.problem = e.localizedDescription } }
+            .fileExporter(isPresented: $exporting, document: backup, contentType: exportType, defaultFilename: exportType == .json ? "AbitudiniLocale-backup" : "AbitudiniLocale-registrazioni") { result in if case .failure(let e) = result { store.problem = e.localizedDescription } }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
                 do {
                     let url = try result.get(), access = url.startAccessingSecurityScopedResource(); defer { if access { url.stopAccessingSecurityScopedResource() } }

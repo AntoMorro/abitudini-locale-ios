@@ -35,7 +35,7 @@ struct HabitBoard: View {
     func card(_ h: Habit, compact: Bool) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                NavigationLink { HabitDetail(habitID: h.id) } label: { HStack { Image(systemName: h.symbol).foregroundStyle(h.color.habitColor); Text(h.title).font(.headline).foregroundStyle(.primary).lineLimit(2) } }.accessibilityIdentifier("detail-" + h.title)
+                NavigationLink { HabitDetail(habitID: h.id) } label: { HStack(spacing: 12) { Image(systemName: h.symbol).font(.title2).foregroundStyle(h.color.habitColor).frame(width: 44,height: 44).background(h.color.habitColor.opacity(0.13),in: RoundedRectangle(cornerRadius: 13)); VStack(alignment: .leading,spacing: 4) { Text(h.title).font(.headline).foregroundStyle(.primary).lineLimit(2); if !compact && !store.db.plan(h).description.isEmpty { Text(store.db.plan(h).description).font(.caption).foregroundStyle(.secondary).lineLimit(2) } } }.accessibilityIdentifier("detail-" + h.title)
                 Spacer(minLength: 2)
                 if !h.archived && h.kind == .check { Button { store.toggleDay(h, date: Date()) } label: { Image(systemName: Tracker.complete(h, db: store.db, date: Date()) ? "checkmark.circle.fill" : "circle").font(.title2) }.tint(h.color.habitColor).accessibilityLabel("Completa \(h.title)") }
                 else if !h.archived && h.kind == .counter { NavigationLink { HabitDetail(habitID: h.id) } label: { Image(systemName: "plus.circle").font(.title2) }.tint(h.color.habitColor) }
@@ -43,7 +43,7 @@ struct HabitBoard: View {
             if layout != "list" { TrackerGrid(habit: h, db: store.db, weeks: compact ? 8 : 26) }
             let p = store.db.plan(h), progress = Tracker.periodProgress(h, db: store.db, date: Date())
             HStack { Text(p.category.isEmpty ? (p.quit ? "Da abbandonare" : "Da costruire") : p.category); Spacer(); Text(p.period == .daily ? "Ogni giorno previsto" : "\(progress.0)/\(progress.1) · \(p.period == .weekly ? "settimana" : "mese")") }.font(.caption2).foregroundStyle(.secondary)
-        }.padding(16).background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+        }.padding(16).background { RoundedRectangle(cornerRadius: 22).fill(Color(uiColor: .secondarySystemGroupedBackground)); RoundedRectangle(cornerRadius: 22).fill(LinearGradient(colors:[h.color.habitColor.opacity(0.09),.clear],startPoint:.topLeading,endPoint:.bottomTrailing)) }.overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(h.color.habitColor.opacity(0.12)) }
     }
 }
 struct TrackerGrid: View {
@@ -79,6 +79,7 @@ struct HabitDetail: View {
     @State private var selected = Date()
     @State private var logging = false
     @State private var deleting = false
+    @State private var shareCard: SharedHabitCard?
     @Environment(\.dismiss) private var dismiss
     var habit: Habit? { store.db.habits.first { $0.id == habitID } }
     var body: some View {
@@ -99,14 +100,14 @@ struct HabitDetail: View {
                     else { Button(Tracker.complete(h, db: store.db, date: Date()) ? "Modifica oggi" : "Registra oggi") { selected = Date(); logging = true }.disabled(h.archived) }
                 }
                 Section("Calendario e note") {
-                    DatePicker("Giorno", selection: $selected, in: min(h.created, Date())...Date(), displayedComponents: .date).datePickerStyle(.graphical)
-                    Text("\(Tracker.total(h, db: store.db, date: selected)) \(store.db.plan(h).unit) · \(Tracker.complete(h, db: store.db, date: selected) ? "Completata" : "Non completata")").font(.caption)
+                    TrackerCalendar(habit: h, db: store.db, selected: $selected) { logging = true }
+                    Text("\((Double(Tracker.total(h, db: store.db, date: selected))/Double(h.kind.timed ? 60 : store.db.plan(h).scale)).formatted()) \(h.kind.timed ? "minuti" : store.db.plan(h).unit) · \(Tracker.complete(h, db: store.db, date: selected) ? "Completata" : "Non completata")").font(.caption)
                     if !store.db.note(h, on: selected).isEmpty { Text(store.db.note(h, on: selected)) }
                     Button("Modifica giorno selezionato") { logging = true }.disabled(h.archived || h.kind.automatic).accessibilityIdentifier("editDay")
                 }
                 Section("Ultimi dodici mesi") { MonthChart(habit: h, db: store.db) }
                 Section {
-                    ShareLink(item: "\(h.title): \(Tracker.stats(h, db: store.db).completions) giorni completati con Abitudini Locale") { Label("Condividi riepilogo", systemImage: "square.and.arrow.up") }
+                    Button("Condividi griglia come immagine") { makeShareCard(h) }
                     ShareLink(item: Tracker.csv(store.db)) { Label("Esporta dati CSV", systemImage: "tablecells") }
                     Button(h.archived ? "Ripristina abitudine" : "Archivia abitudine") { var next = h; next.archived.toggle(); _ = store.saveHabit(next) }
                     Button("Elimina abitudine", role: .destructive) { deleting = true }
@@ -114,10 +115,58 @@ struct HabitDetail: View {
             }.navigationTitle(h.title).navigationBarTitleDisplayMode(.inline).toolbar { Button("Modifica") { editing = h } }
             .sheet(item: $editing) { HabitEditor(habit: $0) }
             .sheet(isPresented: $logging) { DayLog(habit: h, date: selected) }
+            .sheet(item: $shareCard) { card in NavigationStack { VStack(spacing: 24) { if let image = UIImage(contentsOfFile: card.url.path) { Image(uiImage: image).resizable().scaledToFit() }; ShareLink(item: card.url) { Label("Condividi immagine", systemImage: "square.and.arrow.up") }.buttonStyle(.borderedProminent) }.padding().navigationTitle("La tua costanza").toolbar { Button("Fine") { shareCard = nil } } }
             .alert("Eliminare abitudine e storico?", isPresented: $deleting) { Button("Annulla", role: .cancel) {}; Button("Elimina", role: .destructive) { if store.deleteHabit(h) { dismiss() } } } message: { Text("Questa operazione cancella anche note e progressi. Le abitudini collegate a blocchi devono essere prima scollegate.") }
         } else { ContentUnavailableView("Abitudine non disponibile", systemImage: "archivebox") } }
     }
     func metric(_ title: String, _ value: Int) -> some View { VStack(alignment: .leading) { Text("\(value)").font(.title2.bold().monospacedDigit()); Text(title).font(.caption2).foregroundStyle(.secondary) } }
+    @MainActor func makeShareCard(_ h: Habit) {
+        let stats = Tracker.stats(h, db: store.db)
+        let content = VStack(alignment: .leading, spacing: 24) {
+            Label(h.title, systemImage: h.symbol).font(.title.bold()).foregroundStyle(h.color.habitColor)
+            TrackerGrid(habit: h, db: store.db, weeks: 26)
+            Text("\(stats.completions) giorni completati · record \(stats.longest)").font(.headline)
+            Text("Abitudini Locale").font(.caption).foregroundStyle(.secondary)
+        }.padding(30).frame(width: 600).background(Color(uiColor: .systemBackground)).environment(\.colorScheme, store.db.theme == "light" ? .light : .dark)
+        let renderer = ImageRenderer(content: content); renderer.scale = 2
+        guard let data = renderer.uiImage?.pngData() else { store.problem = "Immagine non disponibile."; return }
+        do { let url = FileManager.default.temporaryDirectory.appendingPathComponent("abitudine-\(h.id).png"); try data.write(to: url, options: .atomic); shareCard = SharedHabitCard(url: url) } catch { store.problem = error.localizedDescription }
+    }
+}
+struct SharedHabitCard: Identifiable { var url: URL; var id: URL { url } }
+struct TrackerCalendar: View {
+    var habit: Habit
+    var db: HabitDatabase
+    @Binding var selected: Date
+    var edit: () -> Void
+    @State private var month = Calendar.current.dateInterval(of: .month, for: Date())!.start
+    var body: some View {
+        let c = Calendar.current
+        let offset = (c.component(.weekday, from: month) - c.firstWeekday + 7) % 7
+        let count = c.range(of: .day, in: .month, for: month)!.count
+        VStack(spacing: 16) {
+            HStack {
+                Button { month = c.date(byAdding: .month,value: -1,to: month)! } label: { Image(systemName:"chevron.left") }.disabled(month <= c.dateInterval(of:.month,for:habit.created)!.start)
+                Spacer(); Text(month.formatted(.dateTime.month(.wide).year())).font(.headline); Spacer()
+                Button { month = c.date(byAdding:.month,value:1,to:month)! } label: { Image(systemName:"chevron.right") }.disabled(month >= c.dateInterval(of:.month,for:Date())!.start)
+            }
+            LazyVGrid(columns:Array(repeating:GridItem(.flexible()),count:7),spacing:10) {
+                ForEach(0..<7,id:\.self) { i in Text(c.veryShortWeekdaySymbols[(i+c.firstWeekday-1)%7]).font(.caption2).foregroundStyle(.secondary) }
+                ForEach(0..<(offset+count),id:\.self) { cell in
+                    if cell < offset { Color.clear.frame(height:38) }
+                    else {
+                        let date = c.date(byAdding:.day,value:cell-offset,to:month)!
+                        let done = Tracker.complete(habit,db:db,date:date)
+                        let allowed = date >= c.startOfDay(for:habit.created) && date <= Date()
+                        Button { selected = date; if !habit.kind.automatic && !habit.archived { edit() } } label: {
+                            VStack(spacing:3) { Text("\(cell-offset+1)").font(.subheadline.monospacedDigit()); Circle().fill(db.note(habit,on:date).isEmpty ? .clear : habit.color.habitColor).frame(width:4,height:4) }
+                                .frame(maxWidth:.infinity).frame(height:38).background(done ? habit.color.habitColor.opacity(0.24) : .clear,in:RoundedRectangle(cornerRadius:10)).overlay { if c.isDate(date,inSameDayAs:selected) { RoundedRectangle(cornerRadius:10).stroke(habit.color.habitColor,lineWidth:1.5) } }
+                        }.buttonStyle(.plain).foregroundStyle(done ? habit.color.habitColor : .primary).disabled(!allowed).accessibilityLabel("\(date.formatted(date:.complete,time:.omitted)), \(done ? "completata" : "non completata")")
+                    }
+                }
+            }
+        }
+    }
 }
 struct DayLog: View {
     @EnvironmentObject var store: HabitStore

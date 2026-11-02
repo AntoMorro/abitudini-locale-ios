@@ -18,6 +18,7 @@ struct HabitRoot: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in store.refresh() }
         .onOpenURL { url in if let id = UUID(uuidString: url.lastPathComponent), let h = store.db.habits.first(where: { $0.id == id }) { store.routeHabit = h } }
         .sheet(item: $store.routeHabit) { HabitEditor(habit: $0) }
+        .task { store.syncReminders() }
     }
 }
 struct HabitWelcome: View {

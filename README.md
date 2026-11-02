@@ -1,3 +1,31 @@
+# Abitudini Locale 1.1
+
+La schermata principale ora è un tracker ispirato alle funzioni e schermate pubbliche di HabitKit: https://habitkit.app/ e https://habitkit.app/help. È una realizzazione indipendente; non è una copia perfetta e non importa i backup proprietari di HabitKit.
+
+## Tracker delle abitudini
+
+- Schede colorate con griglie a colonne settimanali, vista compatta o a due colonne; anno scorrevole nel dettaglio.
+- Spunta di oggi con annullamento, contatori interi o misure con tre decimali e unità personalizzata, quantità conservate anche oltre il traguardo.
+- Abitudini da costruire o abbandonare. Per queste ultime serve una registrazione esplicita; un giorno non registrato non è un successo. Il limite numerico è stretto: meno del valore scelto.
+- Giorni previsti e obiettivi giornalieri, settimanali e mensili. Un giorno vale al massimo una volta, anche con quantità maggiori. Serie e record contano giorni previsti o periodi riusciti; il periodo corrente aperto non interrompe la serie.
+- Calendario con giorni colorati, modifica delle registrazioni passate e note, nessuna registrazione futura. Non si possono modificare manualmente i valori automatici di Salute/Screen Time.
+- Categorie, filtri, riordino, archivio, eliminazione confermata; 36 colori e 101 simboli di sistema.
+- Fino a tre orari di promemoria per abitudine, nei giorni selezionati. Limite globale di 60 combinazioni giorno/orario; richiedono il consenso notifiche e iOS può ritardarle per Focus o altre impostazioni.
+- Grafici mensili, tasso nei giorni previsti conclusi (oggi incluso solo se già completato), serie, record, condivisione della griglia PNG e registrazioni CSV, backup JSON in File/iCloud Drive.
+- Widget configurabili per una specifica abitudine o le prime dell’elenco; spunte e incrementi interattivi. La prova sul telefono resta necessaria.
+
+I blocchi già preparati restano in Impostazioni → Blocchi e regole di sblocco. Le abitudini da abbandonare non si collegano ai blocchi. I vecchi backup JSON dell’app sono compatibili; i nuovi campi sono opzionali. Esporta una copia prima di aggiornare o cambiare tipo di pacchetto.
+
+## Installazione dei widget
+
+Il pacchetto Widgets ora include soltanto tracker, widget e Live Activity, senza HealthKit o Family Controls. Per tentare l’installazione con Sideloadly, conserva le estensioni (non usare Remove App Extensions). Dopo l’installazione apri l’app, controlla in Impostazioni che Archivio condiviso sia disponibile, poi Home → pressione prolungata → Modifica → Aggiungi widget → Abitudini Locale. Con una pressione prolungata sul widget scegli Modifica widget per selezionare l’abitudine.
+
+La sola installazione dell’app non garantisce l’App Group: deve essere autorizzato dai profili e mantenuto dal risigner. Se viene cambiato l’identificatore condiviso, anche HabitAppGroup in Info.plist deve corrispondere. Senza il contenitore condiviso il widget mostra una richiesta di configurazione, non dati inventati. Non è stata verificata la firma con l’account gratuito dell’utente. Il pacchetto Base rimane l’alternativa senza estensioni; il pacchetto Completa conserva Salute e Screen Time con i relativi profili.
+
+Le funzioni di pagamento, gli account, le integrazioni private e il promemoria globale di check-in dell’originale non sono inclusi. La condivisione PNG usa il tema dell’app e il colore dell’abitudine, senza un editor separato dei temi.
+
+---
+
 # Abitudini Locale
 
 App iPhone nativa SwiftUI (iOS 18+), indipendente e ispirata al flusso di Habits First di Eric Su. Non è affiliata all'originale e non riproduce tutte le sue funzioni o ogni schermata. Le schermate pubbliche sono state usate come riferimento visivo; non viene incluso codice, grafica o infrastruttura privata dell'app originale.
@@ -7,7 +35,7 @@ App iPhone nativa SwiftUI (iOS 18+), indipendente e ispirata al flusso di Habits
 | Pacchetto | Funzioni compilate | Firma e stato sul dispositivo |
 | --- | --- | --- |
 | Base | Abitudini manuali, contatori, timer, storico, bozze di regole, Comandi Rapidi, backup | Non contiene Family Controls, HealthKit o widget. È il candidato per la firma gratuita con Sideloadly. Non blocca altre app. |
-| Widgets | Base + Salute, widget Home/Lock Screen interattivi, heatmap, Live Activity/Dynamic Island | App ed estensione richiedono profili coerenti, HealthKit e App Group. La tabella Apple attuale elenca App Groups e HealthKit anche per account gratuiti; l'effettiva preservazione delle capability da parte dello strumento di firma deve essere verificata sul telefono. |
+| Widgets | Base + widget Home/Lock Screen interattivi, heatmap, Live Activity/Dynamic Island | App ed estensione richiedono profili coerenti e App Group. La tabella Apple consultata elencava App Groups anche per account gratuiti; l'effettiva preservazione delle capability da parte dello strumento di firma deve essere verificata sul telefono. |
 | Completa | Widgets + FamilyActivityPicker, shield ManagedSettings, monitor DeviceActivity, sblocchi, report protetto Screen Time | Richiede Apple Developer Program e profili Family Controls validi per app ed estensioni. La compilazione senza firma non dimostra che questi diritti siano concessi. |
 
 Lo stato delle verifiche è registrato in VERIFICA.json quando disponibile. Nessun blocco viene simulato come se fosse reale. Il pacchetto Base rifiuta l'attivazione delle regole e l'app completa verifica autorizzazione, archivio condiviso e configurazione del monitoraggio prima di presentarlo come pronto.

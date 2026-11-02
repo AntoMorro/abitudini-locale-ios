@@ -81,7 +81,7 @@ import FamilyControls
     func add(_ habit: Habit, amount: Int = 1) { change { try HabitEngine.add(habit.id, amount: amount, db: &$0, now: Date()) } }
     func syncReminders() {
         reminderTask?.cancel()
-        reminderTask = Task { try? await Task.sleep(for: .milliseconds(350)); guard !Task.isCancelled else { return }; reminderStatus = await HabitReminders.sync(db) }
+        reminderTask = Task { try? await Task.sleep(for: .milliseconds(350)); guard !Task.isCancelled else { return }; let status = await HabitReminders.sync(db); if !Task.isCancelled { reminderStatus = status } }
     }
     func toggleDay(_ habit: Habit, date: Date) {
         let amount: Int? = Tracker.complete(habit, db: db, date: date) ? nil : 1
@@ -146,12 +146,12 @@ import FamilyControls
             restored.emergencyUses = min(restored.emergencyUses, db.emergencyUses)
             restored.emergencyUntil = nil
             db = try repository.restore(JSONEncoder().encode(restored)); readOnly = false
-            try configureProtection(); applyProtection(); WidgetCenter.shared.reloadAllTimelines()
+            try configureProtection(); applyProtection(); WidgetCenter.shared.reloadAllTimelines(); syncReminders()
         } catch { problem = error.localizedDescription }
     }
 }
 struct HabitBackupDocument: FileDocument {
-    static var readableContentTypes: [UTType] { [.json] }
+    static var readableContentTypes: [UTType] { [.json,.commaSeparatedText] }
     var data: Data
     init(data: Data) { self.data = data }
     init(configuration: ReadConfiguration) throws { guard let d = configuration.file.regularFileContents else { throw HabitError.invalid }; data = d }

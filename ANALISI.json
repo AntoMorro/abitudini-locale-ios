@@ -148,5 +148,46 @@
     "https://developer.apple.com/help/account/reference/supported-capabilities-ios",
     "https://developer.apple.com/documentation/xcode/configuring-family-controls",
     "https://developer.apple.com/documentation/familycontrols/requesting-the-family-controls-entitlement"
-  ]
+  ],
+  "habitkit_reference": {
+    "checked_at": "2026-11-02",
+    "sources": [
+      "https://habitkit.app/",
+      "https://habitkit.app/help",
+      "https://habitkit.app/help/guides/habitkit-vs-finch"
+    ],
+    "public_visual_references": [
+      "https://habitkit.app/images/app/slide-goals.webp",
+      "https://habitkit.app/images/app/slide-detail.webp",
+      "https://habitkit.app/images/app/slide-edit.webp"
+    ],
+    "implemented": [
+      "cards_compact_grid_layouts",
+      "weekly_column_heatmaps",
+      "year_view",
+      "editable_month_calendar",
+      "whole_and_three_decimal_measurements",
+      "quit_habits_explicit_confirmation",
+      "daily_weekly_monthly_goals",
+      "scheduled_weekdays",
+      "streaks_and_records",
+      "notes",
+      "categories_filter_reorder_archive_delete",
+      "36_colors_101_system_symbols",
+      "up_to_three_local_reminder_times",
+      "monthly_charts",
+      "csv_file_and_json_backup",
+      "grid_image_sharing",
+      "configurable_interactive_widgets_pending_device_signing"
+    ],
+    "limits": [
+      "independent_not_pixel_perfect",
+      "no_original_proprietary_backup_import",
+      "no_account_sync",
+      "no_automatic_daily_checkin_reminder",
+      "reminders_max_60_weekday_time_combinations",
+      "widget_device_execution_pending"
+    ],
+    "status": "source_implemented_compilation_and_tests_in_progress"
+  }
 }
