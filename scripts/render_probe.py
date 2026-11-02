@@ -1,4 +1,4 @@
-import os,pathlib,subprocess,time
+import json,os,pathlib,subprocess,time
 
 device=os.environ['SIMULATOR_ID']
 app=pathlib.Path('build/probe/Build/Products/Debug-iphonesimulator/AbitudiniLocale.app')
@@ -12,6 +12,7 @@ with (output/'console.log').open('w',encoding='utf-8') as log:
         markers=list((container/'Library/Application Support').rglob('probe-ready'))
         subprocess.run(['xcrun','simctl','io',device,'screenshot',str(output/'detail.png')],check=True)
         assert process.poll() is None and markers, 'Detail did not remain alive and render. See console.log.'
+        (output/'result.json').write_text(json.dumps({'status':'passed','screen':'habit_detail','process_alive':True,'render_marker_present':True}),encoding='utf-8')
         print('Native detail rendering passed without UI automation.')
     finally:
         if process.poll() is None: process.terminate();process.wait(timeout=10)
