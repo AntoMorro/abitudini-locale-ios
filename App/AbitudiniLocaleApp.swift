@@ -93,7 +93,7 @@ struct BlocksView: View {
                     }.onDelete { offsets in let ids = offsets.map { store.db.rules[$0].id }; ids.forEach(store.deleteRule) }
                     if store.db.rules.isEmpty { Section { Text("Crea le abitudini, poi scegli cosa deve sbloccare le app.").foregroundStyle(.secondary); Button("Nuova abitudine") { habit = Habit(title: "") }; Button("Nuovo blocco") { draft = BlockRule(title: "") } } }
                 }
-            }.navigationTitle("blocchi").toolbar { Menu { Button("Nuovo blocco") { draft = BlockRule(title: "") }; Button("Nuova abitudine") { habit = Habit(title: "") } } label: { Image(systemName: "plus") }.accessibilityLabel("Aggiungi") }
+            }.navigationTitle("blocchi").toolbar { Button { draft = BlockRule(title: "") } label: { Image(systemName: "plus") }.accessibilityLabel("Nuovo blocco").accessibilityIdentifier("newBlock") }
             .sheet(item: $draft) { RuleEditor(rule: $0) }.sheet(item: $habit) { HabitEditor(habit: $0) }
         }
     }

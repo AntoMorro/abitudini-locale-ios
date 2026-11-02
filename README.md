@@ -44,6 +44,8 @@ Per il Base seleziona l'IPA in Sideloadly. Per i pacchetti con capability, i pro
 
 La versione completa va firmata nel cloud con certificato e profili di sviluppo del titolare, registrando l'iPhone; non richiede necessariamente un Mac personale. Chiavi private e profili non vanno committati o inviati in chat. Il progetto non contiene credenziali o una configurazione che acquisti/iscriva automaticamente al programma Apple.
 
+Prima di cambiare pacchetto esporta un backup: il Base usa l'archivio privato dell'app, mentre i pacchetti con un App Group disponibile usano quello condiviso. Ripristina il backup nella nuova configurazione. L'aggiornamento del pacchetto non trasferisce automaticamente i dati tra questi due contenitori.
+
 ## Membership Apple
 
 Apple indica 99 USD per anno, con prezzo in valuta locale mostrato all'iscrizione. Per lo sviluppo sul proprio dispositivo serve la membership con Family Controls Development; l'approvazione Family Controls Distribution è distinta e serve per TestFlight/App Store, anche per le relative estensioni.

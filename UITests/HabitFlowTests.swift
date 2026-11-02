@@ -11,7 +11,7 @@ final class HabitFlowTests: XCTestCase {
         let complete = app.buttons["Completa Test habit"]; if !complete.isHittable { app.swipeUp() }
         XCTAssertTrue(complete.waitForExistence(timeout: 5)); complete.tap(); capture("02-Abitudini", app)
         XCTAssertFalse(complete.isEnabled)
-        app.tabBars.buttons["Blocchi"].tap(); app.buttons["Aggiungi"].tap(); app.buttons["Nuovo blocco"].tap()
+        app.tabBars.buttons["Blocchi"].tap(); app.buttons["newBlock"].tap()
         let title = app.textFields["Nome blocco"]; XCTAssertTrue(title.waitForExistence(timeout: 5)); title.tap(); title.typeText("Distrazioni")
         app.switches["Test habit"].tap(); capture("03-Regola", app); app.buttons["Salva"].tap()
         XCTAssertTrue(app.buttons["Distrazioni"].waitForExistence(timeout: 5))
