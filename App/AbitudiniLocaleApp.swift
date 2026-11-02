@@ -9,8 +9,16 @@ struct HabitRoot: View {
     @Environment(\.scenePhase) var phase
     var body: some View {
         Group {
-            if !store.db.onboarded && !store.readOnly { HabitWelcome() }
-            else { TabView { HabitBoard().tabItem { Label("Abitudini", systemImage: "square.grid.3x3.fill") }; TrackerOverview().tabItem { Label("Statistiche", systemImage: "chart.bar.xaxis") }; HabitSettings().tabItem { Label("Impostazioni", systemImage: "gearshape") } } }
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--render-probe"), let h = store.db.habits.first {
+                NavigationStack { HabitDetail(habitID: h.id) }
+                    .task { try? await Task.sleep(for: .seconds(2)); try? Data("rendered".utf8).write(to: HabitEnvironment.repository.directory.appendingPathComponent("probe-ready")) }
+            } else {
+                standardRoot
+            }
+            #else
+            standardRoot
+            #endif
         }
         .alert("Abitudini Locale", isPresented: Binding(get: { store.problem != nil }, set: { if !$0 { store.problem = nil } })) { Button("OK") { store.problem = nil } } message: { Text(store.problem ?? "") }
         .onChange(of: phase) { _, next in if next == .active { store.refresh(); store.syncReminders(); Task { await store.refreshHealth() } } else if next == .inactive { store.background() } }
@@ -19,6 +27,10 @@ struct HabitRoot: View {
         .onOpenURL { url in if let id = UUID(uuidString: url.lastPathComponent), let h = store.db.habits.first(where: { $0.id == id }) { store.routeHabit = h } }
         .sheet(item: $store.routeHabit) { HabitEditor(habit: $0) }
         .task { store.syncReminders() }
+    }
+    @ViewBuilder var standardRoot: some View {
+            if !store.db.onboarded && !store.readOnly { HabitWelcome() }
+            else { TabView { HabitBoard().tabItem { Label("Abitudini", systemImage: "square.grid.3x3.fill") }; TrackerOverview().tabItem { Label("Statistiche", systemImage: "chart.bar.xaxis") }; HabitSettings().tabItem { Label("Impostazioni", systemImage: "gearshape") } } }
     }
 }
 struct HabitWelcome: View {

@@ -19,7 +19,19 @@ import FamilyControls
     let health = HabitHealth()
     #endif
     var shared: Bool { HabitEnvironment.groupURL != nil }
-    init() { refresh(); if let timer = db.timer, !timer.background, timer.processID != ProcessInfo.processInfo.processIdentifier { change { $0.timer = nil } } }
+    init() {
+        refresh()
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--render-probe") {
+            change { db in
+                db = HabitDatabase(); db.onboarded = true
+                let h = Habit(title: "Lettura"); db.habits = [h]
+                db.samples = [ProgressSample(habitID: h.id, day: HabitEngine.day(Date()), key: "probe", amount: 1, date: Date())]
+            }
+        }
+        #endif
+        if let timer = db.timer, !timer.background, timer.processID != ProcessInfo.processInfo.processIdentifier { change { $0.timer = nil } }
+    }
     func refresh() {
         do { db = try repository.read(); readOnly = false }
         catch { readOnly = true; problem = "Archivio non leggibile. L’originale è conservato e i salvataggi sono sospesi: ripristina un backup. \(error.localizedDescription)" }
