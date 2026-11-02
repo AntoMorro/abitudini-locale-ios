@@ -15,83 +15,98 @@
     ]
   },
   "proposed_project": "Abitudini Locale",
-  "implementation_status": "research_only_not_yet_built",
+  "implementation_status": "native_source_and_unsigned_variants_built_device_entitlements_pending",
   "installation_status": "not_installed",
   "feature_inventory": [
     {
       "area": "Habits",
       "publicly_described_behavior": "Manual check-off, repeatable counters, daily cap, archiving and retained history",
-      "implementation_requirement": "Local storage"
+      "implementation_requirement": "Local storage",
+      "implementation_status": "implemented"
     },
     {
       "area": "Timers",
       "publicly_described_behavior": "Focus/Pomodoro, foreground-only or background elapsed tracking, Action Button shortcuts",
-      "implementation_requirement": "App Intents; optional ActivityKit extension"
+      "implementation_requirement": "App Intents; optional ActivityKit extension",
+      "implementation_status": "partial_no_automatic_work_break_cycles"
     },
     {
       "area": "Rules",
       "publicly_described_behavior": "One/all/N-of-M habits, goal thresholds, multiple sources per habit",
-      "implementation_requirement": "Deterministic core rules"
+      "implementation_requirement": "Deterministic core rules",
+      "implementation_status": "implemented"
     },
     {
       "area": "Unlocks",
       "publicly_described_behavior": "Earned unlock bank, whole-day unlock, timed session, cumulative usage allowance, re-block",
-      "implementation_requirement": "Family Controls + ManagedSettings + DeviceActivity for real shields"
+      "implementation_requirement": "Family Controls + ManagedSettings + DeviceActivity for real shields",
+      "implementation_status": "implemented_requires_authorized_physical_device_test"
     },
     {
       "area": "Schedules",
       "publicly_described_behavior": "Chosen weekdays, local time windows, overnight periods, timezone changes",
-      "implementation_requirement": "DeviceActivityMonitor extension"
+      "implementation_requirement": "DeviceActivityMonitor extension",
+      "implementation_status": "implemented_requires_authorized_physical_device_test"
     },
     {
       "area": "Screen Time selection",
       "publicly_described_behavior": "Applications, categories and websites selected using system privacy picker",
-      "implementation_requirement": "FamilyActivityPicker and user authorization"
+      "implementation_requirement": "FamilyActivityPicker and user authorization",
+      "implementation_status": "implemented_requires_Family_Controls_profiles"
     },
     {
       "area": "Screen Time insights",
       "publicly_described_behavior": "Activity report and selected-app thresholds; not unrestricted export of complete device totals",
-      "implementation_requirement": "DeviceActivityReport extension; preserve Screen Time privacy boundaries"
+      "implementation_requirement": "DeviceActivityReport extension; preserve Screen Time privacy boundaries",
+      "implementation_status": "partial_aggregate_report_only"
     },
     {
       "area": "Health",
       "publicly_described_behavior": "Steps, workout duration, mindfulness minutes; avoid overlapping workout double counting",
-      "implementation_requirement": "HealthKit capability, separate user permissions, background delivery limitations"
+      "implementation_requirement": "HealthKit capability, separate user permissions, background delivery limitations",
+      "implementation_status": "implemented_refresh_in_foreground_not_background_delivery"
     },
     {
       "area": "Location",
       "publicly_described_behavior": "Geofenced block activation, visit checkpoints, vacation distance from home",
-      "implementation_requirement": "CoreLocation authorization and background region monitoring"
+      "implementation_requirement": "CoreLocation authorization and background region monitoring",
+      "implementation_status": "not_implemented"
     },
     {
       "area": "Nearby devices",
       "publicly_described_behavior": "Conditions based on supported nearby-device detection",
-      "implementation_requirement": "CoreBluetooth; must verify actual accessory discoverability, no promise to detect every paired device"
+      "implementation_requirement": "CoreBluetooth; must verify actual accessory discoverability, no promise to detect every paired device",
+      "implementation_status": "not_implemented"
     },
     {
       "area": "NFC",
       "publicly_described_behavior": "Pair own NFC tag, scan to complete an unlock condition",
-      "implementation_requirement": "CoreNFC entitlement and scan permission"
+      "implementation_requirement": "CoreNFC entitlement and scan permission",
+      "implementation_status": "not_implemented"
     },
     {
       "area": "Widgets",
       "publicly_described_behavior": "Home Screen progress, heatmaps, multi-habit layouts, Lock Screen accessory widgets, themes and titles",
-      "implementation_requirement": "WidgetKit extension + correctly provisioned shared App Group"
+      "implementation_requirement": "WidgetKit extension + correctly provisioned shared App Group",
+      "implementation_status": "implemented_limited_layout_settings_physical_shared_container_not_verified"
     },
     {
       "area": "Commitment locks",
       "publicly_described_behavior": "Prevent in-app weakening until expiry; password hashing and emergency unlock design",
-      "implementation_requirement": "Local app policy; individual authorization remains revocable, do not claim tamper-proof OS control"
+      "implementation_requirement": "Local app policy; individual authorization remains revocable, do not claim tamper-proof OS control",
+      "implementation_status": "partial_local_commitment_and_emergencies_not_tamper_proof"
     },
     {
       "area": "Integrations",
       "publicly_described_behavior": "Anki, Audiobookshelf, Jellyfin, KOReader, Chess.com, Duolingo, GitHub commits, Shortcuts, webhooks",
-      "implementation_requirement": "Separate real API/protocol implementations, credentials kept in Keychain; availability and terms must be checked"
+      "implementation_requirement": "Separate real API/protocol implementations, credentials kept in Keychain; availability and terms must be checked",
+      "implementation_status": "partial_generic_Shortcuts_only_no_direct_original_service_integrations"
     },
     {
       "area": "Settings",
       "publicly_described_behavior": "Security, appearance, schedules, notifications; optional account and multi-device synchronization",
-      "implementation_requirement": "Local settings; backend required to reproduce original account/cloud functions"
+      "implementation_requirement": "Local settings; backend required to reproduce original account/cloud functions",
+      "implementation_status": "partial_local_only_no_accounts_or_cloud_sync"
     }
   ],
   "apple_capability_matrix_observed": {
@@ -121,7 +136,7 @@
       "Apple_Developer_free": true
     }
   },
-  "signing_decision_pending": "Awaiting user Apple Developer Program membership preference. Family Controls development is not available to the free Apple Developer account column in Apple capability table.",
+  "signing_decision_pending": "User has no paid membership and is evaluating enrollment. No enrollment or purchase performed.",
   "widget_signing_note": "Apple capability table currently lists App groups in all three membership columns. Actual group provisioning and preservation by the selected signing tool still need a real-device test. Do not infer Family Controls availability from widget capability.",
   "distribution_note": "Family Controls distribution approval is separate from paid membership and is required for TestFlight/App Store; extensions each require appropriate entitlements/profiles.",
   "limits_of_analysis": "Public product site, App Store listing, release notes and Apple docs only. No claim of complete UI parity or inspection of every original in-app screen.",

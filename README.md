@@ -60,3 +60,11 @@ Analisi delle funzioni pubbliche dell'originale e relative fonti: ANALISI.json.
 ## Sviluppo su Mac
 
 `swift test`, `brew install xcodegen`, poi `xcodegen generate --spec project.json` (Base), `project-widgets.json` oppure `project-full.json`. Apri AbitudiniLocale.xcodeproj. Il progetto usa framework Apple di sistema senza dipendenze esterne.
+
+## Verifica del pacchetto consegnato
+
+Il 2 novembre 2026 sono passati i 12 test del motore e la compilazione arm64 dei tre pacchetti, comprese le cinque estensioni della versione Completa. Gli IPA sono senza firma; gli hash sono in VERIFICA.json. L'ultimo test UI completo non è concluso: dopo un errore di inizializzazione del simulatore, due tentativi sono in coda sui runner GitHub. Non viene dichiarato un test UI superato. Nessuna installazione o prova delle capability sul telefono è stata eseguita.
+
+Gli IPA derivano dal commit 8ed8425fb28ef43fd434074b210c3f13f31dd7e9; le revisioni successive modificano soltanto il test UI e la configurazione CI. Il codice applicativo e delle estensioni è identico.
+
+Verifiche CI: https://github.com/AntoMorro/abitudini-locale-ios/actions

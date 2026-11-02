@@ -1,0 +1,69 @@
+{
+  "checked_at": "2026-11-02",
+  "project": "Abitudini Locale",
+  "source_commit": "6141bbe90686871a929ed56f57cbd6b611444f5a",
+  "binary_source_commit": "8ed8425fb28ef43fd434074b210c3f13f31dd7e9",
+  "source_difference": "Subsequent changes affect UI tests and CI only, not app or extension code.",
+  "native_ios_minimum": "18.0",
+  "core_tests": {
+    "status": "passed",
+    "count": 12,
+    "run_id": 41486852480
+  },
+  "compilation": {
+    "base": "passed",
+    "widgets": "passed",
+    "screen_time_full": "passed",
+    "run_id": 41486852480
+  },
+  "binary_inspection": {
+    "architecture": "arm64",
+    "extension_counts": {
+      "base": 0,
+      "widgets": 1,
+      "complete": 5
+    },
+    "bundle_versions_match": true,
+    "app_group_matches_widget_and_monitor": true,
+    "artifact_download_digests_verified": true
+  },
+  "native_ui_tests": {
+    "status": "not_concluded_latest_attempts_queued",
+    "last_completed_attempt": "Test runner failed before tests: Timed out waiting for AX loaded notification.",
+    "previous_behavioral_failures": "Earlier automation found toolbar accessibility and keyboard/toggle targeting issues; code/test fixes committed. A passing final end-to-end result is not available.",
+    "pending_runs": [
+      41486852480,
+      41504423270
+    ],
+    "tested_package": "Base"
+  },
+  "device_installation": "not_performed",
+  "device_runtime_checks": {
+    "screen_time_shields_and_unlocks": "pending_valid_profiles_and_device_authorization",
+    "widget_shared_storage": "pending_signed_device_test",
+    "healthkit": "pending_signed_device_consent_and_test",
+    "live_activity": "pending_signed_device_test"
+  },
+  "apple_developer_membership": "not_present_user_evaluating_no_enrollment_performed",
+  "binaries": [
+    {
+      "file": "AbitudiniLocale-Base-unsigned.ipa",
+      "bytes": 344461,
+      "sha256": "70fcf39b6d220d71e479c306d5b68d5f422a1d435b070885959ce2b2169cadb2",
+      "signed": false
+    },
+    {
+      "file": "AbitudiniLocale-Completa-unsigned.ipa",
+      "bytes": 693839,
+      "sha256": "fc09f2ae061b518ffac833fc70ad174d3b1fb254141e275b68c15977a187947b",
+      "signed": false
+    },
+    {
+      "file": "AbitudiniLocale-Widgets-unsigned.ipa",
+      "bytes": 542531,
+      "sha256": "7ea5099e88ffd686a476d1609a302d70a91c4f04a61a13ef49efef4e5c9b66dc",
+      "signed": false
+    }
+  ],
+  "scope": "Independent implementation of selected public features; not full functional or pixel-perfect parity. See README.md and ANALISI.json."
+}
