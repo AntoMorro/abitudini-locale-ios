@@ -84,21 +84,19 @@ struct TrackerGrid: View {
         let today = cal.startOfDay(for: Date())
         let weekday = (cal.component(.weekday, from: today) - cal.firstWeekday + 7) % 7
         let start = cal.date(byAdding: .day, value: -((weeks - 1)*7 + weekday), to: today)!
-        GeometryReader { geometry in
-            HStack(alignment: .top, spacing: 3) {
-                ForEach(0..<weeks, id: \.self) { column in
-                    VStack(spacing: 3) { ForEach(0..<7, id: \.self) { row in
-                        let date = cal.date(byAdding: .day, value: column*7+row, to: start)!
-                        let complete = ledger.complete(date)
-                        let amount = ledger.amounts[HabitEngine.day(date)] ?? 0
-                        let due = Tracker.scheduled(habit, db: db, date: date) && date <= today
-                        RoundedRectangle(cornerRadius: 2).fill(date > today ? Color.clear : complete ? habit.color.habitColor : amount > 0 && !db.plan(habit).quit ? habit.color.habitColor.opacity(0.4) : Color.gray.opacity(due ? 0.18 : 0.12))
-                            .frame(width: max(1,(geometry.size.width - CGFloat(weeks-1)*3)/CGFloat(weeks)), height: max(1,(geometry.size.width - CGFloat(weeks-1)*3)/CGFloat(weeks)))
-                            .accessibilityLabel("\(date.formatted(date: .abbreviated, time: .omitted)), \(complete ? "completata" : "non completata")")
-                    } }
-                }
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: weeks), spacing: 3) {
+            ForEach(0..<(weeks*7), id: \.self) { index in
+                let column = index % weeks
+                let row = index / weeks
+                let date = cal.date(byAdding: .day, value: column*7+row, to: start)!
+                let complete = ledger.complete(date)
+                let amount = ledger.amounts[HabitEngine.day(date)] ?? 0
+                let due = Tracker.scheduled(habit, db: db, date: date) && date <= today
+                RoundedRectangle(cornerRadius: 2).fill(date > today ? Color.clear : complete ? habit.color.habitColor : amount > 0 && !db.plan(habit).quit ? habit.color.habitColor.opacity(0.4) : Color.gray.opacity(due ? 0.18 : 0.12))
+                    .aspectRatio(1, contentMode: .fit)
+                    .accessibilityLabel("\(date.formatted(date: .abbreviated, time: .omitted)), \(complete ? "completata" : "non completata")")
             }
-        }.aspectRatio(CGFloat(weeks)/7, contentMode: .fit).accessibilityElement(children: .ignore).accessibilityLabel("Griglia di \(weeks) settimane di \(habit.title)")
+        }.accessibilityElement(children: .ignore).accessibilityLabel("Griglia di \(weeks) settimane di \(habit.title)")
     }
 }
 struct HabitDetail: View {
