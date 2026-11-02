@@ -22,6 +22,19 @@ struct TrackerStats {
     var current: Int
     var longest: Int
 }
+struct TrackerLedger {
+    var amounts: [String: Int] = [:]
+    let habit: Habit
+    let plan: HabitPlan
+    init(_ h: Habit, db: HabitDatabase) {
+        habit = h; plan = db.plan(h)
+        for sample in db.samples where sample.habitID == h.id { amounts[sample.day] = min(1_000_000_000, (amounts[sample.day] ?? 0) + sample.amount) }
+    }
+    func complete(_ date: Date, calendar: Calendar = .current) -> Bool {
+        guard let amount = amounts[HabitEngine.day(date, calendar: calendar)] else { return false }
+        return plan.quit ? (habit.kind == .check ? amount > 0 : amount < habit.goal) : amount >= habit.goal
+    }
+}
 enum Tracker {
     static func scheduled(_ h: Habit, db: HabitDatabase, date: Date, calendar: Calendar = .current) -> Bool {
         calendar.startOfDay(for: date) >= calendar.startOfDay(for: h.created) && db.plan(h).weekdays.contains(calendar.component(.weekday, from: date))
@@ -46,25 +59,27 @@ enum Tracker {
         if let amount { db.samples.append(ProgressSample(habitID: h.id, day: key, key: "tracker.total", amount: amount, date: date)) }
         if let note { if db.notes == nil { db.notes = [:] }; db.notes?[h.id.uuidString + "|" + key] = note.isEmpty ? nil : note }
     }
-    static func periodProgress(_ h: Habit, db: HabitDatabase, date: Date, calendar: Calendar = .current) -> (Int, Int) {
+    static func periodProgress(_ h: Habit, db: HabitDatabase, date: Date, calendar: Calendar = .current, ledger: TrackerLedger? = nil) -> (Int, Int) {
         let p = db.plan(h)
+        let ledger = ledger ?? TrackerLedger(h, db: db)
         let component: Calendar.Component = p.period == .weekly ? .weekOfYear : p.period == .monthly ? .month : .day
         guard let interval = calendar.dateInterval(of: component, for: date) else { return (0,p.target) }
         var cursor = interval.start, count = 0
         while cursor < min(interval.end, calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: date))!) {
-            if scheduled(h, db: db, date: cursor, calendar: calendar) && complete(h, db: db, date: cursor, calendar: calendar) { count += 1 }
+            if scheduled(h, db: db, date: cursor, calendar: calendar) && ledger.complete(cursor, calendar: calendar) { count += 1 }
             cursor = calendar.date(byAdding: .day, value: 1, to: cursor)!
         }
         return (count, p.period == .daily ? 1 : p.target)
     }
     static func stats(_ h: Habit, db: HabitDatabase, now: Date = Date(), calendar: Calendar = .current) -> TrackerStats {
         let p = db.plan(h), today = calendar.startOfDay(for: now)
+        let ledger = TrackerLedger(h, db: db)
         var cursor = calendar.startOfDay(for: h.created), completed = 0, due = 0
         var run = 0, longest = 0
         while cursor <= today {
             if scheduled(h, db: db, date: cursor, calendar: calendar) {
-                if complete(h, db: db, date: cursor, calendar: calendar) { completed += 1 }
-                if cursor < today || complete(h, db: db, date: cursor, calendar: calendar) { due += 1 }
+                if ledger.complete(cursor, calendar: calendar) { completed += 1 }
+                if cursor < today || ledger.complete(cursor, calendar: calendar) { due += 1 }
             }
             cursor = calendar.date(byAdding: .day, value: 1, to: cursor)!
         }
@@ -75,7 +90,7 @@ enum Tracker {
             let end = calendar.dateInterval(of: component, for: cursor)!.end
             if p.period == .daily && !scheduled(h, db: db, date: cursor, calendar: calendar) { cursor = end; continue }
             let evaluation = min(now, end.addingTimeInterval(-1))
-            let progress = periodProgress(h, db: db, date: evaluation, calendar: calendar)
+            let progress = periodProgress(h, db: db, date: evaluation, calendar: calendar, ledger: ledger)
             if progress.0 >= progress.1 { run += 1; longest = max(longest,run) }
             else if cursor < currentStart { run = 0 }
             cursor = end

@@ -46,4 +46,10 @@ final class TrackerTests: XCTestCase {
         XCTAssertThrowsError(try db.validated());p.weekdays=[2];p.reminders=[1440];db.plans=[h.id.uuidString:p];XCTAssertThrowsError(try db.validated())
         p.reminders=[];db.plans=[h.id.uuidString:p];db.notes=["invalid":"test"];XCTAssertThrowsError(try db.validated())
     }
+    func testMonthlyGoalAndThreeDecimalAmounts() throws {
+        var db=HabitDatabase();let h=Habit(title:"Acqua",kind:.counter,goal:1500,created:date("2026-09-01"));db.habits=[h];var p=HabitPlan();p.scale=1000;p.unit="litri";p.period = .monthly;p.target=2;db.plans=[h.id.uuidString:p]
+        for key in ["2026-09-01","2026-09-30","2026-10-01","2026-10-31"] { try Tracker.record(h,db:&db,date:date(key),amount:1625,now:date("2026-11-02"),calendar:cal) }
+        XCTAssertEqual(Tracker.stats(h,db:db,now:date("2026-11-02"),calendar:cal).current,2)
+        XCTAssertTrue(Tracker.csv(db).contains("1.625"));XCTAssertEqual(Tracker.periodProgress(h,db:db,date:date("2026-11-02"),calendar:cal).0,0)
+    }
 }

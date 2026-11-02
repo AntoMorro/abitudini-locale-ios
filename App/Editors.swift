@@ -65,7 +65,7 @@ struct HabitEditor: View {
                 if !habit.kind.timed { TextField("Unità (pagine, litri…)", text: $plan.unit) } else { Text("Obiettivo espresso in minuti").font(.caption) }
             }
             Picker("Frequenza", selection: $plan.period) { Text("Giornaliera").tag(GoalPeriod.daily); Text("Settimanale").tag(GoalPeriod.weekly); Text("Mensile").tag(GoalPeriod.monthly) }.onChange(of: plan.period) { _, period in plan.target = min(plan.target, period == .weekly ? 7 : period == .monthly ? 31 : 1) }
-            if plan.period != .daily { Stepper("\(plan.target) giorni per \(plan.period == .weekly ? "settimana" : "mese")", value: $plan.target, in: 1...(plan.period == .weekly ? 7 : 31)) }
+            if plan.period != .daily { Stepper("\(plan.target) giorni per \(plan.period == .weekly ? "settimana" : "mese")", value: $plan.target, in: 1...(plan.period == .weekly ? plan.weekdays.count : 31)) }
             if habit.kind == .timer { Toggle("Continua a schermo spento", isOn: $habit.backgroundTimer); Text("Il timer prosegue fino alla pausa; non alterna automaticamente lavoro e riposo.").font(.caption) }
             if habit.kind != .appTime { Toggle("Limita i crediti a uno al giorno", isOn: $habit.capOnceDaily); Text("Le quantità effettive rimangono nello storico anche oltre l’obiettivo.").font(.caption) }
             #if SCREEN_TIME
@@ -76,7 +76,7 @@ struct HabitEditor: View {
     var schedule: some View {
         Section("Giorni previsti") {
             ForEach(1...7, id: \.self) { day in Toggle(Calendar.current.weekdaySymbols[day-1], isOn: Binding(get: { plan.weekdays.contains(day) }, set: { flag in if flag { plan.weekdays.insert(day) } else if plan.weekdays.count > 1 { plan.weekdays.remove(day) } })) }
-            DatePicker("Data di inizio", selection: $habit.created, in: Calendar.current.date(byAdding: .year, value: -20, to: Date())!...Date(), displayedComponents: .date)
+            DatePicker("Data di inizio", selection: $habit.created, in: Calendar.current.date(byAdding: .year, value: -20, to: Date())!...Date(), displayedComponents: .date).onChange(of: plan.weekdays) { _, days in if plan.period == .weekly { plan.target = min(plan.target,days.count) } }
             Text("I giorni non previsti non interrompono le serie giornaliere. I giorni futuri non si possono compilare.").font(.caption).foregroundStyle(.secondary)
         }
     }

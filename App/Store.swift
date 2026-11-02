@@ -28,7 +28,12 @@ import FamilyControls
     @discardableResult func change(_ body: (inout HabitDatabase) throws -> Void, configure: Bool = false) -> Bool {
         guard !readOnly else { problem = "Ripristina un backup prima di modificare l’archivio."; return false }
         do {
-            db = try repository.update(body)
+            let previousTimer = db.timer?.habitID
+            db = try repository.update { value in
+                try body(&value)
+                if let id = value.timer?.habitID, value.habits.first(where: { $0.id == id })?.archived != false { HabitEngine.settleTimer(&value, now: Date()) }
+            }
+            if previousTimer != nil && db.timer == nil { LiveTimer.end() }
             if configure { try configureProtection() }
             applyProtection(); WidgetCenter.shared.reloadAllTimelines(); syncReminders(); return true
         } catch { problem = error.localizedDescription; return false }

@@ -96,7 +96,7 @@ struct HabitDatabase: Codable {
         guard Set(habits.map(\.id)).count == habits.count, Set(rules.map(\.id)).count == rules.count, Set(samples.map(\.id)).count == samples.count, Set(spends.map(\.id)).count == spends.count else { throw HabitError.invalid }
         let ids = Set(habits.map(\.id)), ruleIDs = Set(rules.map(\.id))
         for (id, p) in plans ?? [:] {
-            guard let uuid = UUID(uuidString: id), ids.contains(uuid), [1,1000].contains(p.scale), !p.weekdays.isEmpty, p.weekdays.isSubset(of: Set(1...7)), (1...(p.period == .weekly ? 7 : p.period == .monthly ? 31 : 1)).contains(p.target), p.reminders.count <= 3, Set(p.reminders).count == p.reminders.count, p.reminders.allSatisfy({ (0..<1440).contains($0) }), p.description.count <= 2000, p.category.count <= 100, p.unit.count <= 30 else { throw HabitError.invalid }
+            guard let uuid = UUID(uuidString: id), ids.contains(uuid), [1,1000].contains(p.scale), !p.weekdays.isEmpty, p.weekdays.isSubset(of: Set(1...7)), (1...(p.period == .weekly ? p.weekdays.count : p.period == .monthly ? 31 : 1)).contains(p.target), p.reminders.count <= 3, Set(p.reminders).count == p.reminders.count, p.reminders.allSatisfy({ (0..<1440).contains($0) }), p.description.count <= 2000, p.category.count <= 100, p.unit.count <= 30 else { throw HabitError.invalid }
         }
         guard (notes?.count ?? 0) <= 1_000_000, (notes ?? [:]).allSatisfy({ key, value in key.count == 47 && value.count <= 10_000 && UUID(uuidString: String(key.prefix(36))).map(ids.contains) == true }) else { throw HabitError.invalid }
         for h in habits { guard !h.title.isEmpty, (1...10_000_000).contains(h.goal), (h.activitySelection?.count ?? 0) < 1_000_000 else { throw HabitError.invalid } }

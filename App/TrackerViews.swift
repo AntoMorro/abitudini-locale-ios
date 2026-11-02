@@ -52,6 +52,7 @@ struct TrackerGrid: View {
     var weeks = 26
     var body: some View {
         let cal = Calendar.current
+        let ledger = TrackerLedger(habit, db: db)
         let today = cal.startOfDay(for: Date())
         let weekday = (cal.component(.weekday, from: today) - cal.firstWeekday + 7) % 7
         let start = cal.date(byAdding: .day, value: -((weeks - 1)*7 + weekday), to: today)!
@@ -60,8 +61,8 @@ struct TrackerGrid: View {
                 ForEach(0..<weeks, id: \.self) { column in
                     VStack(spacing: 3) { ForEach(0..<7, id: \.self) { row in
                         let date = cal.date(byAdding: .day, value: column*7+row, to: start)!
-                        let complete = Tracker.complete(habit, db: db, date: date)
-                        let amount = Tracker.total(habit, db: db, date: date)
+                        let complete = ledger.complete(date)
+                        let amount = ledger.amounts[HabitEngine.day(date)] ?? 0
                         let due = Tracker.scheduled(habit, db: db, date: date) && date <= today
                         RoundedRectangle(cornerRadius: 2).fill(date > today || date < cal.startOfDay(for: habit.created) ? Color.clear : complete ? habit.color.habitColor : amount > 0 && !db.plan(habit).quit ? habit.color.habitColor.opacity(0.4) : Color.gray.opacity(due ? 0.18 : 0.07))
                             .frame(width: max(1,(geometry.size.width - CGFloat(weeks-1)*3)/CGFloat(weeks)), height: max(1,(geometry.size.width - CGFloat(weeks-1)*3)/CGFloat(weeks)))
@@ -142,6 +143,7 @@ struct TrackerCalendar: View {
     @State private var month = Calendar.current.dateInterval(of: .month, for: Date())!.start
     var body: some View {
         let c = Calendar.current
+        let ledger = TrackerLedger(habit, db: db)
         let offset = (c.component(.weekday, from: month) - c.firstWeekday + 7) % 7
         let count = c.range(of: .day, in: .month, for: month)!.count
         VStack(spacing: 16) {
@@ -156,7 +158,7 @@ struct TrackerCalendar: View {
                     if cell < offset { Color.clear.frame(height:38) }
                     else {
                         let date = c.date(byAdding:.day,value:cell-offset,to:month)!
-                        let done = Tracker.complete(habit,db:db,date:date)
+                        let done = ledger.complete(date)
                         let allowed = date >= c.startOfDay(for:habit.created) && date <= Date()
                         Button { selected = date; if !habit.kind.automatic && !habit.archived { edit() } } label: {
                             VStack(spacing:3) { Text("\(cell-offset+1)").font(.subheadline.monospacedDigit()); Circle().fill(db.note(habit,on:date).isEmpty ? .clear : habit.color.habitColor).frame(width:4,height:4) }
@@ -202,9 +204,10 @@ struct MonthChart: View {
     var db: HabitDatabase
     var data: [(Date,Int)] {
         let c = Calendar.current, this = c.dateInterval(of: .month, for: Date())!.start
+        let ledger = TrackerLedger(habit, db: db)
         return (0..<12).reversed().map { offset in
             let start = c.date(byAdding: .month, value: -offset, to: this)!, days = c.range(of: .day, in: .month, for: start)!
-            let count = days.filter { d in let date = c.date(byAdding: .day, value: d-1, to: start)!; return date <= Date() && Tracker.complete(habit, db: db, date: date) }.count
+            let count = days.filter { d in let date = c.date(byAdding: .day, value: d-1, to: start)!; return date <= Date() && ledger.complete(date) }.count
             return (start,count)
         }
     }
