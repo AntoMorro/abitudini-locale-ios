@@ -2,6 +2,7 @@ import XCTest
 
 final class HabitFlowTests: XCTestCase {
     func testHabitCompletionAndRuleDraft() {
+        continueAfterFailure = false
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "-AppleLanguages", "(it)", "-AppleLocale", "it_IT"]; app.launch()
         XCTAssertTrue(app.buttons["Esplora un esempio"].waitForExistence(timeout: 15)); app.buttons["Esplora un esempio"].tap()
         XCTAssertTrue(app.navigationBars["blocchi"].waitForExistence(timeout: 8)); capture("01-Blocchi", app)
@@ -13,7 +14,9 @@ final class HabitFlowTests: XCTestCase {
         XCTAssertFalse(complete.isEnabled)
         app.tabBars.buttons["Blocchi"].tap(); app.buttons["newBlock"].tap()
         let title = app.textFields["Nome blocco"]; XCTAssertTrue(title.waitForExistence(timeout: 5)); title.tap(); title.typeText("Distrazioni\n")
-        let selected = app.switches["Test habit"]; XCTAssertTrue(selected.waitForExistence(timeout: 5)); selected.tap()
+        let selected = app.switches["Test habit"]; XCTAssertTrue(selected.waitForExistence(timeout: 5))
+        let nativeSwitch = selected.switches.firstMatch
+        if nativeSwitch.exists { nativeSwitch.tap() } else { selected.tap() }
         XCTAssertEqual(selected.value as? String, "1")
         capture("03-Regola", app); XCTAssertTrue(app.buttons["Salva"].isEnabled); app.buttons["Salva"].tap()
         XCTAssertTrue(app.buttons["Distrazioni"].waitForExistence(timeout: 5))
