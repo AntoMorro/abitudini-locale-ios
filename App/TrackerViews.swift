@@ -187,6 +187,7 @@ struct DayLog: View {
             Section("Nota del giorno") { TextEditor(text: $note).frame(minHeight: 100).accessibilityIdentifier("dayNote") }
             Section { Button("Cancella registrazione", role: .destructive) { if store.recordDay(habit, date: date, amount: nil, note: "") { dismiss() } } }
         }.navigationTitle("Registra giornata").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .cancellationAction) { Button("Annulla") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("Salva giornata") { save() } } }
+        }
         .onAppear { let raw = Tracker.total(habit, db: store.db, date: date); value = String(Double(raw)/Double(habit.kind.timed ? 60 : store.db.plan(habit).scale)); done = Tracker.complete(habit, db: store.db, date: date); note = store.db.note(habit, on: date) }
     }
     func save() {
