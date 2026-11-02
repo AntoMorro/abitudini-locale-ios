@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   base:
+    if: ${{ !contains(github.event.head_commit.message, '[ui-only]') }}
     name: Habit engine and base iPhone app
     runs-on: macos-15-intel
     timeout-minutes: 25
@@ -40,6 +41,7 @@ jobs:
           path: build-base.log
           retention-days: 7
   extensions:
+    if: ${{ !contains(github.event.head_commit.message, '[ui-only]') }}
     name: Widgets Health and Screen Time extensions
     runs-on: macos-15-intel
     timeout-minutes: 30
@@ -74,7 +76,7 @@ jobs:
           retention-days: 7
   ui:
     name: iPhone habit and rule UI verification
-    runs-on: macos-15-intel
+    runs-on: macos-15
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -84,6 +86,11 @@ jobs:
         run: |
           xcodegen generate --spec project.json
           python3 scripts/select_simulator.py >> "$GITHUB_ENV"
+      - name: Boot simulator before UI test
+        timeout-minutes: 8
+        run: |
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          open -a Simulator --args -CurrentDeviceUDID "$SIMULATOR_ID"
       - name: Native UI tests
         timeout-minutes: 22
         run: |
