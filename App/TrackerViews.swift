@@ -72,7 +72,7 @@ struct TrackerGrid: View {
                         let complete = ledger.complete(date)
                         let amount = ledger.amounts[HabitEngine.day(date)] ?? 0
                         let due = Tracker.scheduled(habit, db: db, date: date) && date <= today
-                        RoundedRectangle(cornerRadius: 2).fill(date > today || date < cal.startOfDay(for: habit.created) ? Color.clear : complete ? habit.color.habitColor : amount > 0 && !db.plan(habit).quit ? habit.color.habitColor.opacity(0.4) : Color.gray.opacity(due ? 0.18 : 0.07))
+                        RoundedRectangle(cornerRadius: 2).fill(date > today ? Color.clear : complete ? habit.color.habitColor : amount > 0 && !db.plan(habit).quit ? habit.color.habitColor.opacity(0.4) : Color.gray.opacity(due ? 0.18 : 0.12))
                             .frame(width: max(1,(geometry.size.width - CGFloat(weeks-1)*3)/CGFloat(weeks)), height: max(1,(geometry.size.width - CGFloat(weeks-1)*3)/CGFloat(weeks)))
                             .accessibilityLabel("\(date.formatted(date: .abbreviated, time: .omitted)), \(complete ? "completata" : "non completata")")
                     } }
@@ -98,7 +98,7 @@ struct HabitDetail: View {
                     Label(h.title, systemImage: h.symbol).font(.title2.bold()).foregroundStyle(h.color.habitColor)
                     if !store.db.plan(h).description.isEmpty { Text(store.db.plan(h).description).foregroundStyle(.secondary) }
                     TrackerGrid(habit: h, db: store.db, weeks: 26)
-                    NavigationLink("Un anno di progressi") { ScrollView(.horizontal) { TrackerGrid(habit: h, db: store.db, weeks: 53).frame(width: 760).padding() }.navigationTitle("Il tuo anno") }
+                    NavigationLink("Un anno di progressi") { [snapshot = store.db] in ScrollView(.horizontal) { TrackerGrid(habit: h, db: snapshot, weeks: 53).frame(width: 760).padding() }.navigationTitle("Il tuo anno") }
                     let stats = Tracker.stats(h, db: store.db)
                     HStack { metric("Serie attuale", stats.current); Spacer(); metric("Record", stats.longest); Spacer(); metric("Giorni", stats.completions) }
                     Text("Le serie contano \(store.db.plan(h).period == .daily ? "giorni previsti" : store.db.plan(h).period == .weekly ? "settimane con obiettivo raggiunto" : "mesi con obiettivo raggiunto"). Il periodo corrente ancora aperto non interrompe la serie.").font(.caption).foregroundStyle(.secondary)
@@ -123,7 +123,7 @@ struct HabitDetail: View {
                 }
             }.navigationTitle(h.title).navigationBarTitleDisplayMode(.inline).toolbar { Button("Modifica") { editing = h } }
             .sheet(item: $editing) { HabitEditor(habit: $0) }
-            .sheet(isPresented: $logging) { DayLog(habit: h, date: selected) }
+            .sheet(isPresented: $logging) { [day = selected] in DayLog(habit: h, date: day) }
             .sheet(item: $shareCard) { card in HabitCardPreview(card: card) }
             .alert("Eliminare abitudine e storico?", isPresented: $deleting) { Button("Annulla", role: .cancel) {}; Button("Elimina", role: .destructive) { if store.deleteHabit(h) { dismiss() } } } message: { Text("Questa operazione cancella anche note e progressi. Le abitudini collegate a blocchi devono essere prima scollegate.") }
         } else { ContentUnavailableView("Abitudine non disponibile", systemImage: "archivebox") } }
