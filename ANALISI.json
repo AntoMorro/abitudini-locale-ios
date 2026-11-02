@@ -1,0 +1,137 @@
+{
+  "checked_at": "2026-11-02",
+  "original_app": {
+    "name": "Habits First",
+    "developer": "Eric Su",
+    "app_store_id": 6791076258,
+    "version_observed": "2.8.4",
+    "minimum_ios": "18.0",
+    "screenshot_urls": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2f/e2/da/2fe2da56-5f22-2ee8-5b8a-cf7b4eaf1775/01-do-the-thing-then-scroll.png/320x480bb.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/5e/56/23/5e562384-228b-a51b-2b29-4f8d9f5ca038/02-home-block-screen-copy.png/320x480bb.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/73/c8/c4/73c8c4be-e050-46fe-20dc-6465a321c113/03-home-block-screen.png/320x480bb.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/85/1c/6d/851c6d4e-8d74-14e7-50fd-f686c3b6fd00/04-habits-at-a-glance.png/320x480bb.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/61/9b/f0/619bf07b-57a5-dcd1-3e12-4eba56afe38e/05-a-year-of-habits-option-1.png/320x480bb.jpg"
+    ]
+  },
+  "proposed_project": "Abitudini Locale",
+  "implementation_status": "research_only_not_yet_built",
+  "installation_status": "not_installed",
+  "feature_inventory": [
+    {
+      "area": "Habits",
+      "publicly_described_behavior": "Manual check-off, repeatable counters, daily cap, archiving and retained history",
+      "implementation_requirement": "Local storage"
+    },
+    {
+      "area": "Timers",
+      "publicly_described_behavior": "Focus/Pomodoro, foreground-only or background elapsed tracking, Action Button shortcuts",
+      "implementation_requirement": "App Intents; optional ActivityKit extension"
+    },
+    {
+      "area": "Rules",
+      "publicly_described_behavior": "One/all/N-of-M habits, goal thresholds, multiple sources per habit",
+      "implementation_requirement": "Deterministic core rules"
+    },
+    {
+      "area": "Unlocks",
+      "publicly_described_behavior": "Earned unlock bank, whole-day unlock, timed session, cumulative usage allowance, re-block",
+      "implementation_requirement": "Family Controls + ManagedSettings + DeviceActivity for real shields"
+    },
+    {
+      "area": "Schedules",
+      "publicly_described_behavior": "Chosen weekdays, local time windows, overnight periods, timezone changes",
+      "implementation_requirement": "DeviceActivityMonitor extension"
+    },
+    {
+      "area": "Screen Time selection",
+      "publicly_described_behavior": "Applications, categories and websites selected using system privacy picker",
+      "implementation_requirement": "FamilyActivityPicker and user authorization"
+    },
+    {
+      "area": "Screen Time insights",
+      "publicly_described_behavior": "Activity report and selected-app thresholds; not unrestricted export of complete device totals",
+      "implementation_requirement": "DeviceActivityReport extension; preserve Screen Time privacy boundaries"
+    },
+    {
+      "area": "Health",
+      "publicly_described_behavior": "Steps, workout duration, mindfulness minutes; avoid overlapping workout double counting",
+      "implementation_requirement": "HealthKit capability, separate user permissions, background delivery limitations"
+    },
+    {
+      "area": "Location",
+      "publicly_described_behavior": "Geofenced block activation, visit checkpoints, vacation distance from home",
+      "implementation_requirement": "CoreLocation authorization and background region monitoring"
+    },
+    {
+      "area": "Nearby devices",
+      "publicly_described_behavior": "Conditions based on supported nearby-device detection",
+      "implementation_requirement": "CoreBluetooth; must verify actual accessory discoverability, no promise to detect every paired device"
+    },
+    {
+      "area": "NFC",
+      "publicly_described_behavior": "Pair own NFC tag, scan to complete an unlock condition",
+      "implementation_requirement": "CoreNFC entitlement and scan permission"
+    },
+    {
+      "area": "Widgets",
+      "publicly_described_behavior": "Home Screen progress, heatmaps, multi-habit layouts, Lock Screen accessory widgets, themes and titles",
+      "implementation_requirement": "WidgetKit extension + correctly provisioned shared App Group"
+    },
+    {
+      "area": "Commitment locks",
+      "publicly_described_behavior": "Prevent in-app weakening until expiry; password hashing and emergency unlock design",
+      "implementation_requirement": "Local app policy; individual authorization remains revocable, do not claim tamper-proof OS control"
+    },
+    {
+      "area": "Integrations",
+      "publicly_described_behavior": "Anki, Audiobookshelf, Jellyfin, KOReader, Chess.com, Duolingo, GitHub commits, Shortcuts, webhooks",
+      "implementation_requirement": "Separate real API/protocol implementations, credentials kept in Keychain; availability and terms must be checked"
+    },
+    {
+      "area": "Settings",
+      "publicly_described_behavior": "Security, appearance, schedules, notifications; optional account and multi-device synchronization",
+      "implementation_requirement": "Local settings; backend required to reproduce original account/cloud functions"
+    }
+  ],
+  "apple_capability_matrix_observed": {
+    "App groups": {
+      "ADP_paid": true,
+      "ADEP_enterprise": true,
+      "Apple_Developer_free": true
+    },
+    "Family Controls (development) *": {
+      "ADP_paid": true,
+      "ADEP_enterprise": false,
+      "Apple_Developer_free": false
+    },
+    "HealthKit": {
+      "ADP_paid": true,
+      "ADEP_enterprise": true,
+      "Apple_Developer_free": true
+    },
+    "HealthKit Estimate Recalibration": {
+      "ADP_paid": true,
+      "ADEP_enterprise": true,
+      "Apple_Developer_free": false
+    },
+    "Keychain sharing": {
+      "ADP_paid": true,
+      "ADEP_enterprise": true,
+      "Apple_Developer_free": true
+    }
+  },
+  "signing_decision_pending": "Awaiting user Apple Developer Program membership preference. Family Controls development is not available to the free Apple Developer account column in Apple capability table.",
+  "widget_signing_note": "Apple capability table currently lists App groups in all three membership columns. Actual group provisioning and preservation by the selected signing tool still need a real-device test. Do not infer Family Controls availability from widget capability.",
+  "distribution_note": "Family Controls distribution approval is separate from paid membership and is required for TestFlight/App Store; extensions each require appropriate entitlements/profiles.",
+  "limits_of_analysis": "Public product site, App Store listing, release notes and Apple docs only. No claim of complete UI parity or inspection of every original in-app screen.",
+  "sources": [
+    "https://apps.apple.com/us/app/habits-first/id6791076258",
+    "https://habitsfirst.com/",
+    "https://habitsfirst.com/updates/",
+    "https://reysu.io/support",
+    "https://developer.apple.com/help/account/reference/supported-capabilities-ios",
+    "https://developer.apple.com/documentation/xcode/configuring-family-controls",
+    "https://developer.apple.com/documentation/familycontrols/requesting-the-family-controls-entitlement"
+  ]
+}

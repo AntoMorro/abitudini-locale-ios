@@ -1,0 +1,79 @@
+{
+  "include": [
+    "project.json"
+  ],
+  "settings": {
+    "base": {
+      "APP_GROUP": "group.local.abitudinilocale.shared"
+    }
+  },
+  "targets": {
+    "AbitudiniLocale": {
+      "dependencies": [
+        {
+          "target": "HabitWidgets",
+          "embed": true
+        }
+      ],
+      "settings": {
+        "base": {
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) HEALTH WIDGETS"
+        }
+      },
+      "entitlements": {
+        "path": "Generated/App.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "$(APP_GROUP)"
+          ],
+          "com.apple.developer.healthkit": true
+        }
+      },
+      "info": {
+        "properties": {
+          "HabitAppGroup": "$(APP_GROUP)",
+          "NSSupportsLiveActivities": true,
+          "NSHealthShareUsageDescription": "Legge passi, allenamenti e minuti di meditazione per verificare le abitudini scelte."
+        }
+      }
+    },
+    "HabitWidgets": {
+      "type": "app-extension",
+      "platform": "iOS",
+      "sources": [
+        "Widgets",
+        "Core",
+        "Shared/Environment.swift",
+        "Shared/Intents.swift",
+        "Shared/LiveTimer.swift"
+      ],
+      "settings": {
+        "base": {
+          "PRODUCT_BUNDLE_IDENTIFIER": "local.abitudinilocale.habits.habitwidgets",
+          "SKIP_INSTALL": "YES",
+          "GENERATE_INFOPLIST_FILE": "YES",
+          "APPLICATION_EXTENSION_API_ONLY": "YES",
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) WIDGETS WIDGET_HOST"
+        }
+      },
+      "info": {
+        "path": "Generated/HabitWidgets-Info.plist",
+        "properties": {
+          "CFBundleDisplayName": "Abitudini Locale",
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
+          },
+          "HabitAppGroup": "$(APP_GROUP)"
+        }
+      },
+      "entitlements": {
+        "path": "Generated/HabitWidgets.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "$(APP_GROUP)"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "include": [
+    "project-widgets.json"
+  ],
+  "targets": {
+    "AbitudiniLocale": {
+      "dependencies": [
+        {
+          "target": "HabitMonitor",
+          "embed": true
+        },
+        {
+          "target": "HabitShield",
+          "embed": true
+        },
+        {
+          "target": "HabitAction",
+          "embed": true
+        },
+        {
+          "target": "HabitReport",
+          "embed": true
+        }
+      ],
+      "settings": {
+        "base": {
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) HEALTH WIDGETS SCREEN_TIME"
+        }
+      },
+      "entitlements:REPLACE": {
+        "path": "Generated/App-Full.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "$(APP_GROUP)"
+          ],
+          "com.apple.developer.family-controls": true,
+          "com.apple.developer.healthkit": true
+        }
+      }
+    },
+    "HabitMonitor": {
+      "type": "app-extension",
+      "platform": "iOS",
+      "sources": [
+        "Extensions/Monitor",
+        "Core",
+        "Shared/Environment.swift",
+        "Shared/ScreenTime.swift"
+      ],
+      "settings": {
+        "base": {
+          "PRODUCT_BUNDLE_IDENTIFIER": "local.abitudinilocale.habits.habitmonitor",
+          "SKIP_INSTALL": "YES",
+          "GENERATE_INFOPLIST_FILE": "YES",
+          "APPLICATION_EXTENSION_API_ONLY": "YES",
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) SCREEN_TIME"
+        }
+      },
+      "info": {
+        "path": "Generated/HabitMonitor-Info.plist",
+        "properties": {
+          "CFBundleDisplayName": "Abitudini Locale",
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.deviceactivity.monitor-extension",
+            "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitMonitor"
+          },
+          "HabitAppGroup": "$(APP_GROUP)"
+        }
+      },
+      "entitlements": {
+        "path": "Generated/HabitMonitor.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "$(APP_GROUP)"
+          ],
+          "com.apple.developer.family-controls": true
+        }
+      }
+    },
+    "HabitShield": {
+      "type": "app-extension",
+      "platform": "iOS",
+      "sources": [
+        "Extensions/Shield"
+      ],
+      "settings": {
+        "base": {
+          "PRODUCT_BUNDLE_IDENTIFIER": "local.abitudinilocale.habits.habitshield",
+          "SKIP_INSTALL": "YES",
+          "GENERATE_INFOPLIST_FILE": "YES",
+          "APPLICATION_EXTENSION_API_ONLY": "YES",
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) "
+        }
+      },
+      "info": {
+        "path": "Generated/HabitShield-Info.plist",
+        "properties": {
+          "CFBundleDisplayName": "Abitudini Locale",
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.ManagedSettingsUI.shield-configuration-service",
+            "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitShield"
+          }
+        }
+      },
+      "entitlements": {
+        "path": "Generated/HabitShield.entitlements",
+        "properties": {
+          "com.apple.developer.family-controls": true
+        }
+      }
+    },
+    "HabitAction": {
+      "type": "app-extension",
+      "platform": "iOS",
+      "sources": [
+        "Extensions/Action"
+      ],
+      "settings": {
+        "base": {
+          "PRODUCT_BUNDLE_IDENTIFIER": "local.abitudinilocale.habits.habitaction",
+          "SKIP_INSTALL": "YES",
+          "GENERATE_INFOPLIST_FILE": "YES",
+          "APPLICATION_EXTENSION_API_ONLY": "YES",
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) "
+        }
+      },
+      "info": {
+        "path": "Generated/HabitAction-Info.plist",
+        "properties": {
+          "CFBundleDisplayName": "Abitudini Locale",
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.ManagedSettings.shield-action-service",
+            "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitShieldAction"
+          }
+        }
+      },
+      "entitlements": {
+        "path": "Generated/HabitAction.entitlements",
+        "properties": {
+          "com.apple.developer.family-controls": true
+        }
+      }
+    },
+    "HabitReport": {
+      "type": "app-extension",
+      "platform": "iOS",
+      "sources": [
+        "Extensions/Report"
+      ],
+      "settings": {
+        "base": {
+          "PRODUCT_BUNDLE_IDENTIFIER": "local.abitudinilocale.habits.habitreport",
+          "SKIP_INSTALL": "YES",
+          "GENERATE_INFOPLIST_FILE": "YES",
+          "APPLICATION_EXTENSION_API_ONLY": "YES",
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) "
+        }
+      },
+      "info": {
+        "path": "Generated/HabitReport-Info.plist",
+        "properties": {
+          "CFBundleDisplayName": "Abitudini Locale",
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.deviceactivityui.report-extension"
+          }
+        }
+      },
+      "entitlements": {
+        "path": "Generated/HabitReport.entitlements",
+        "properties": {
+          "com.apple.developer.family-controls": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,106 @@
+name: Build Abitudini Locale
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'ANALISI.json', 'VERIFICA.json']
+permissions:
+  contents: read
+concurrency:
+  group: habits-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+jobs:
+  base:
+    name: Habit engine and base iPhone app
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Habit engine tests
+        run: swift test --parallel
+      - name: Install XcodeGen
+        run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+      - name: Generate base project
+        run: xcodegen generate --spec project.json
+      - name: Build base iPhone app
+        run: |
+          set -o pipefail
+          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/base CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-base.log
+      - name: Package base IPA
+        run: bash scripts/package.sh base Base
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AbitudiniLocale-Base-IPA
+          path: build/AbitudiniLocale-Base-unsigned.ipa
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: AbitudiniLocale-base-logs
+          path: build-base.log
+          retention-days: 7
+  extensions:
+    name: Widgets Health and Screen Time extensions
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+      - name: Build widget package
+        run: |
+          xcodegen generate --spec project-widgets.json
+          set -o pipefail
+          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/widgets CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-widgets.log
+          bash scripts/package.sh widgets Widgets
+      - name: Build full Screen Time package
+        run: |
+          xcodegen generate --spec project-full.json
+          set -o pipefail
+          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/full CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-full.log
+          bash scripts/package.sh full Completa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AbitudiniLocale-Extensions-IPA
+          path: |
+            build/AbitudiniLocale-Widgets-unsigned.ipa
+            build/AbitudiniLocale-Completa-unsigned.ipa
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: AbitudiniLocale-extension-logs
+          path: build-*.log
+          retention-days: 7
+  ui:
+    name: iPhone habit and rule UI verification
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+      - name: Generate and select simulator
+        run: |
+          xcodegen generate --spec project.json
+          python3 scripts/select_simulator.py >> "$GITHUB_ENV"
+      - name: Native UI tests
+        timeout-minutes: 22
+        run: |
+          set -o pipefail
+          xcodebuild test -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult CODE_SIGNING_ALLOWED=NO | tee build-ui.log
+      - name: Export test screenshots
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p build/screenshots
+          if [ -d build/UITests.xcresult ]; then
+            xcrun xcresulttool export attachments --path build/UITests.xcresult --output-path build/screenshots
+          fi
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: AbitudiniLocale-UI-verification
+          path: |
+            build/screenshots
+            build-ui.log
+          retention-days: 7

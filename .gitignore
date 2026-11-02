@@ -1,0 +1,11 @@
+.build/
+build/
+Generated/
+*.xcodeproj/
+__pycache__/
+*.p12
+*.mobileprovision
+*.p8
+*.cer
+*.key
+.DS_Store
