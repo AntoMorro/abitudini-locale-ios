@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: habits-v11-${{ github.ref }}
+  group: habits-release-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   base:

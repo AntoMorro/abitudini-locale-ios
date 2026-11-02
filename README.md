@@ -10,7 +10,8 @@ La schermata principale ora è un tracker ispirato alle funzioni e schermate pub
 - Giorni previsti e obiettivi giornalieri, settimanali e mensili. Un giorno vale al massimo una volta, anche con quantità maggiori. Serie e record contano giorni previsti o periodi riusciti; il periodo corrente aperto non interrompe la serie.
 - Calendario con giorni colorati, modifica delle registrazioni passate e note, nessuna registrazione futura. Non si possono modificare manualmente i valori automatici di Salute/Screen Time.
 - Categorie, filtri, riordino, archivio, eliminazione confermata; 36 colori e 101 simboli di sistema.
-- Fino a tre orari di promemoria per abitudine, nei giorni selezionati. Limite globale di 60 combinazioni giorno/orario; richiedono il consenso notifiche e iOS può ritardarle per Focus o altre impostazioni.
+- Check-in quotidiano opzionale a un orario scelto dalle Impostazioni.
+- Fino a tre orari di promemoria per abitudine, nei giorni selezionati. Limite globale di 60 richieste: un orario quotidiano usa una sola richiesta, mentre i giorni selezionati richiedono una richiesta ciascuno; richiedono il consenso notifiche e iOS può ritardarle per Focus o altre impostazioni.
 - Grafici mensili, tasso nei giorni previsti conclusi (oggi incluso solo se già completato), serie, record, condivisione della griglia PNG e registrazioni CSV, backup JSON in File/iCloud Drive.
 - Widget configurabili per una specifica abitudine o le prime dell’elenco; spunte e incrementi interattivi. La prova sul telefono resta necessaria.
 
@@ -22,7 +23,7 @@ Il pacchetto Widgets ora include soltanto tracker, widget e Live Activity, senza
 
 La sola installazione dell’app non garantisce l’App Group: deve essere autorizzato dai profili e mantenuto dal risigner. Se viene cambiato l’identificatore condiviso, anche HabitAppGroup in Info.plist deve corrispondere. Senza il contenitore condiviso il widget mostra una richiesta di configurazione, non dati inventati. Non è stata verificata la firma con l’account gratuito dell’utente. Il pacchetto Base rimane l’alternativa senza estensioni; il pacchetto Completa conserva Salute e Screen Time con i relativi profili.
 
-Le funzioni di pagamento, gli account, le integrazioni private e il promemoria globale di check-in dell’originale non sono inclusi. La condivisione PNG usa il tema dell’app e il colore dell’abitudine, senza un editor separato dei temi.
+Le funzioni di pagamento, gli account e le integrazioni private non sono inclusi. La condivisione PNG usa il tema dell’app e il colore dell’abitudine, senza un editor separato dei temi.
 
 ---
 

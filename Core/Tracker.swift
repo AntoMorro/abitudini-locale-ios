@@ -36,6 +36,12 @@ struct TrackerLedger {
     }
 }
 enum Tracker {
+    static func reminderRequestCount(_ db: HabitDatabase) -> Int {
+        db.habits.filter { !$0.archived }.reduce(db.checkInMinute == nil ? 0 : 1) { count, h in
+            let p = db.plan(h)
+            return count + p.reminders.count * (p.weekdays.count == 7 ? 1 : p.weekdays.count)
+        }
+    }
     static func scheduled(_ h: Habit, db: HabitDatabase, date: Date, calendar: Calendar = .current) -> Bool {
         calendar.startOfDay(for: date) >= calendar.startOfDay(for: h.created) && db.plan(h).weekdays.contains(calendar.component(.weekday, from: date))
     }

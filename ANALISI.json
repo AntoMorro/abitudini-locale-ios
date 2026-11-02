@@ -178,14 +178,14 @@
       "monthly_charts",
       "csv_file_and_json_backup",
       "grid_image_sharing",
-      "configurable_interactive_widgets_pending_device_signing"
+      "configurable_interactive_widgets_pending_device_signing",
+      "optional_daily_checkin"
     ],
     "limits": [
       "independent_not_pixel_perfect",
       "no_original_proprietary_backup_import",
       "no_account_sync",
-      "no_automatic_daily_checkin_reminder",
-      "reminders_max_60_weekday_time_combinations",
+      "reminders_max_60_requests_daily_times_use_one_request",
       "widget_device_execution_pending"
     ],
     "status": "source_implemented_compilation_and_tests_in_progress"

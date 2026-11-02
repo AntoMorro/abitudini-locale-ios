@@ -102,7 +102,7 @@ import FamilyControls
         var draft = db
         if let i = draft.habits.firstIndex(where: { $0.id == h.id }) { draft.habits[i] = h } else { draft.habits.append(h) }
         if draft.plans == nil { draft.plans = [:] }; draft.plans?[h.id.uuidString] = plan
-        guard HabitReminders.count(draft) <= 60 else { problem = "Riduci i promemoria: massimo 60 combinazioni giorno/orario tra tutte le abitudini."; return false }
+        guard HabitReminders.count(draft) <= 60 else { problem = "Riduci i promemoria: massimo 60 richieste totali tra tutte le abitudini."; return false }
         return change({ db in
             guard !db.rules.contains(where: { $0.habitIDs.contains(h.id) && (HabitEngine.locked($0, now: Date()) || plan.quit) }) else { throw HabitError.locked }
             if h.archived && db.rules.contains(where: { $0.enabled && $0.habitIDs.contains(h.id) }) { throw HabitError.locked }

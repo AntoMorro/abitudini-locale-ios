@@ -39,6 +39,8 @@ struct HabitSettings: View {
                 Section("Abitudini") {
                     NavigationLink("Riordina abitudini") { HabitOrder() }
                     Button("Abilita promemoria") { Task { do { _ = try await HabitReminders.authorize(); store.syncReminders() } catch { store.problem = error.localizedDescription } } }
+                    Toggle("Promemoria di check-in giornaliero", isOn: Binding(get: { store.db.checkInMinute != nil }, set: { enabled in store.change { $0.checkInMinute = enabled ? 1200 : nil }; if enabled { Task { do { _ = try await HabitReminders.authorize(); store.syncReminders() } catch { store.problem = error.localizedDescription } } } }))
+                    if store.db.checkInMinute != nil { DatePicker("Orario check-in", selection: Binding(get: { HabitFormat.date(store.db.checkInMinute ?? 1200) }, set: { value in store.change { $0.checkInMinute = HabitFormat.minute(value) } }), displayedComponents: .hourAndMinute) }
                     Text(store.reminderStatus).font(.caption).foregroundStyle(.secondary)
                     Button("Esporta tutte le registrazioni CSV") { backup = HabitBackupDocument(data: Data(Tracker.csv(store.db).utf8)); exportType = .commaSeparatedText; exporting = true }
                 }

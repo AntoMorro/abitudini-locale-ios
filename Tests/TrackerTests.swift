@@ -52,4 +52,12 @@ final class TrackerTests: XCTestCase {
         XCTAssertEqual(Tracker.stats(h,db:db,now:date("2026-11-02"),calendar:cal).current,2)
         XCTAssertTrue(Tracker.csv(db).contains("1.625"));XCTAssertEqual(Tracker.periodProgress(h,db:db,date:date("2026-11-02"),calendar:cal).0,0)
     }
+    func testEverydayRemindersUseOneRequestPerTimeAndCheckInIsIncluded() throws {
+        var db = HabitDatabase(); let h = Habit(title: "A"); db.habits = [h]
+        var p = HabitPlan(); p.reminders = [540,720,1200]; db.plans = [h.id.uuidString:p]
+        XCTAssertEqual(Tracker.reminderRequestCount(db),3)
+        db.checkInMinute = 1200; XCTAssertEqual(Tracker.reminderRequestCount(db),4)
+        p.weekdays = [2,4,6]; db.plans = [h.id.uuidString:p]; XCTAssertEqual(Tracker.reminderRequestCount(db),10)
+        db.checkInMinute = 1440; XCTAssertThrowsError(try db.validated())
+    }
 }

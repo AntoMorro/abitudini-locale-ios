@@ -17,6 +17,7 @@ final class HabitFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["Registra oggi"].waitForExistence(timeout:5))
         app.tabBars.buttons["Statistiche"].tap();capture("03-Statistiche",app);XCTAssertTrue(app.staticTexts["Giorni completati"].exists)
         app.tabBars.buttons["Impostazioni"].tap();capture("04-Impostazioni",app);XCTAssertTrue(app.buttons["Abilita promemoria"].exists)
+        XCTAssertTrue(app.switches["Promemoria di check-in giornaliero"].exists)
     }
     func capture(_ name:String,_ app:XCUIApplication) { let a=XCTAttachment(screenshot:app.screenshot());a.name=name;a.lifetime = .keepAlways;add(a) }
 }

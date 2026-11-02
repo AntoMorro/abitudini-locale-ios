@@ -87,7 +87,7 @@ struct HabitEditor: View {
                 Button(role: .destructive) { plan.reminders.remove(at: index) } label: { Image(systemName: "minus.circle") }
             } }
             if plan.reminders.count < 3 { Button("Aggiungi promemoria") { let candidate = (0..<1440).first { !plan.reminders.contains($0) && $0 >= 540 } ?? 480; plan.reminders.append(candidate) } }
-            Text("Fino a tre orari nei giorni previsti. iOS consente un numero limitato di richieste: l’app accetta al massimo 60 combinazioni giorno/orario totali.").font(.caption).foregroundStyle(.secondary)
+            Text("Fino a tre orari nei giorni previsti. iOS consente un numero limitato di richieste: l’app accetta al massimo 60 richieste totali (un orario quotidiano occupa una sola richiesta).").font(.caption).foregroundStyle(.secondary)
         }
     }
     var appearance: some View {

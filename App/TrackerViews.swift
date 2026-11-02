@@ -7,6 +7,7 @@ struct HabitBoard: View {
     @State private var category = "Tutte"
     @State private var archived = false
     @State private var creating: Habit?
+    @State private var logging: BoardDayLog?
     var habits: [Habit] { store.db.habits.filter { $0.archived == archived && (category == "Tutte" || store.db.plan($0).category == category) } }
     var body: some View {
         NavigationStack {
@@ -30,6 +31,7 @@ struct HabitBoard: View {
                 } label: { Image(systemName: "line.3.horizontal.decrease") }.accessibilityLabel("Vista e filtri") }
                 ToolbarItem(placement: .topBarTrailing) { Button { creating = Habit(title: "") } label: { Image(systemName: "plus") }.accessibilityLabel("Nuova abitudine") }
             }.sheet(item: $creating) { HabitEditor(habit: $0) }
+            .sheet(item: $logging) { selection in DayLog(habit: selection.habit, date: selection.date) }
         }
     }
     func card(_ h: Habit, compact: Bool) -> some View {
@@ -49,11 +51,29 @@ struct HabitBoard: View {
                 else if !h.archived && h.kind == .counter { NavigationLink { HabitDetail(habitID: h.id) } label: { Image(systemName: "plus.circle").font(.title2) }.tint(h.color.habitColor) }
             }
             if layout != "list" { TrackerGrid(habit: h, db: store.db, weeks: compact ? 8 : 26) }
+            else { weekStrip(h) }
             let p = store.db.plan(h), progress = Tracker.periodProgress(h, db: store.db, date: Date())
             HStack { Text(p.category.isEmpty ? (p.quit ? "Da abbandonare" : "Da costruire") : p.category); Spacer(); Text(p.period == .daily ? "Ogni giorno previsto" : "\(progress.0)/\(progress.1) · \(p.period == .weekly ? "settimana" : "mese")") }.font(.caption2).foregroundStyle(.secondary)
         }.padding(16).background { RoundedRectangle(cornerRadius: 22).fill(Color(uiColor: .secondarySystemGroupedBackground)); RoundedRectangle(cornerRadius: 22).fill(LinearGradient(colors:[h.color.habitColor.opacity(0.09),.clear],startPoint:.topLeading,endPoint:.bottomTrailing)) }.overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(h.color.habitColor.opacity(0.12)) }
     }
+    func weekStrip(_ h: Habit) -> some View {
+        HStack(spacing: 8) {
+            ForEach(0..<7, id: \.self) { index in
+                let date = Calendar.current.date(byAdding: .day, value: index-6, to: Date())!
+                let done = Tracker.complete(h, db: store.db, date: date)
+                Button {
+                    if h.kind == .check { store.toggleDay(h, date: date) }
+                    else { logging = BoardDayLog(habit: h, date: date) }
+                } label: {
+                    Text(date.formatted(.dateTime.day())).font(.caption.monospacedDigit()).frame(maxWidth: .infinity).frame(height: 32)
+                        .background(done ? h.color.habitColor.opacity(0.6) : .gray.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                }.buttonStyle(.plain).disabled(h.archived || h.kind.automatic || Calendar.current.startOfDay(for: date) < Calendar.current.startOfDay(for: h.created))
+                .accessibilityLabel("\(h.title), \(date.formatted(date: .complete, time: .omitted)), \(done ? "completata" : "non completata")")
+            }
+        }
+    }
 }
+struct BoardDayLog: Identifiable { var id = UUID(); var habit: Habit; var date: Date }
 struct TrackerGrid: View {
     let habit: Habit
     let db: HabitDatabase
