@@ -49,8 +49,9 @@ struct HabitWidgetView: View {
     }
     func ratio(_ h: Habit) -> Double { min(1, Double(HabitEngine.progress(h, in: entry.db, now: entry.date)) / Double(h.goal)) }
     func heat(_ h: Habit) -> some View {
-        let values = HabitEngine.heatmap(h, db: entry.db)
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: family == .systemSmall ? 7 : 14), spacing: 3) { ForEach(values.indices, id: \.self) { i in RoundedRectangle(cornerRadius: 2).fill(values[i].1 > 0 ? Color.mint.opacity(0.25 + values[i].1 * 0.75) : Color.gray.opacity(0.22)).aspectRatio(1, contentMode: .fit) } }
+        let values = HabitEngine.heatmap(h, db: entry.db, days: family == .systemLarge ? 364 : 84)
+        let columns = family == .systemSmall ? 14 : family == .systemMedium ? 21 : 28
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: columns), spacing: 3) { ForEach(values.indices, id: \.self) { i in RoundedRectangle(cornerRadius: 2).fill(values[i].1 > 0 ? Color.mint.opacity(0.25 + values[i].1 * 0.75) : Color.gray.opacity(0.22)).aspectRatio(1, contentMode: .fit) } }
     }
 }
 struct ProgressHabitWidget: Widget {
@@ -59,7 +60,7 @@ struct ProgressHabitWidget: Widget {
 }
 struct HeatmapHabitWidget: Widget {
     let kind = "AbitudiniHeatmap"
-    var body: some WidgetConfiguration { StaticConfiguration(kind: kind, provider: HabitProvider()) { HabitWidgetView(entry: $0, heatmap: true) }.configurationDisplayName("Mappa delle abitudini").description("Dodici settimane per la prima abitudine nell’elenco.").supportedFamilies([.systemSmall, .systemMedium, .systemLarge]) }
+    var body: some WidgetConfiguration { StaticConfiguration(kind: kind, provider: HabitProvider()) { HabitWidgetView(entry: $0, heatmap: true) }.configurationDisplayName("Mappa delle abitudini").description("Dodici settimane, oppure un anno nel formato grande, per la prima abitudine.").supportedFamilies([.systemSmall, .systemMedium, .systemLarge]) }
 }
 struct FocusHabitActivity: Widget {
     var body: some WidgetConfiguration {
