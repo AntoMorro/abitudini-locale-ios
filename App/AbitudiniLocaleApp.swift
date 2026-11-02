@@ -10,10 +10,10 @@ struct HabitRoot: View {
     var body: some View {
         Group {
             if !store.db.onboarded && !store.readOnly { HabitWelcome() }
-            else { TabView { BlocksView().tabItem { Label("Blocchi", systemImage: "lock.shield") }; HabitInsights().tabItem { Label("Statistiche", systemImage: "chart.bar.xaxis") }; HabitSettings().tabItem { Label("Impostazioni", systemImage: "gearshape") } } }
+            else { TabView { HabitBoard().tabItem { Label("Abitudini", systemImage: "square.grid.3x3.fill") }; TrackerOverview().tabItem { Label("Statistiche", systemImage: "chart.bar.xaxis") }; HabitSettings().tabItem { Label("Impostazioni", systemImage: "gearshape") } } }
         }
         .alert("Abitudini Locale", isPresented: Binding(get: { store.problem != nil }, set: { if !$0 { store.problem = nil } })) { Button("OK") { store.problem = nil } } message: { Text(store.problem ?? "") }
-        .onChange(of: phase) { _, next in if next == .active { store.refresh(); Task { await store.refreshHealth() } } else if next == .inactive { store.background() } }
+        .onChange(of: phase) { _, next in if next == .active { store.refresh(); store.syncReminders(); Task { await store.refreshHealth() } } else if next == .inactive { store.background() } }
         .onReceive(NotificationCenter.default.publisher(for: .habitDataChanged)) { _ in store.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in store.refresh() }
         .onOpenURL { url in if let id = UUID(uuidString: url.lastPathComponent), let h = store.db.habits.first(where: { $0.id == id }) { store.routeHabit = h } }
@@ -25,19 +25,18 @@ struct HabitWelcome: View {
     var body: some View {
         ScrollView { VStack(alignment: .leading, spacing: 27) {
             Image(systemName: "leaf.fill").font(.system(size: 60)).foregroundStyle(.mint).padding(.top, 50)
-            Text("Prima ciò\nche conta.").font(.system(size: 42, weight: .bold, design: .rounded))
-            Text("Trasforma lo studio, il movimento e le tue piccole abitudini in tempo guadagnato.").font(.title3).foregroundStyle(.secondary)
+            Text("Un giorno.\nUn quadratino.").font(.system(size: 42, weight: .bold, design: .rounded))
+            Text("Raccogli le tue abitudini, osserva i progressi e costruisci il tuo ritmo.").font(.title3).foregroundStyle(.secondary)
             Label("Scegli le tue abitudini e i loro obiettivi", systemImage: "checklist")
             Label("Ritrova i progressi e lo storico ogni giorno", systemImage: "square.grid.3x3")
-            Label("Collega Tempo di utilizzo quando il profilo è pronto", systemImage: "lock.shield")
+            Label("Calendario, note e promemoria, sul tuo iPhone", systemImage: "calendar")
             Button("Inizia") { store.change { $0.onboarded = true } }.buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
             Button("Esplora un esempio") { store.change { $0 = HabitEngine.demo() } }.frame(maxWidth: .infinity)
         }.padding(28) }
     }
 }
-extension String {
-    var habitColor: Color { switch self { case "cyan": return .cyan; case "blue": return .blue; case "orange": return .orange; case "pink": return .pink; case "purple": return .purple; default: return .mint } }
-}
+extension String { var habitColor: Color { paletteColor } }
+
 enum HabitFormat {
     static func amount(_ amount: Int, habit: Habit) -> String { habit.kind.timed ? "\(amount / 60):" + String(format: "%02d", amount % 60) : "\(amount)" }
     static func date(_ minute: Int) -> Date { Calendar.current.date(byAdding: .minute, value: minute, to: Calendar.current.startOfDay(for: Date()))! }

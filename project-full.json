@@ -36,6 +36,11 @@
           "com.apple.developer.family-controls": true,
           "com.apple.developer.healthkit": true
         }
+      },
+      "info": {
+        "properties": {
+          "NSHealthShareUsageDescription": "Legge passi, allenamenti e minuti di meditazione per le abitudini scelte."
+        }
       }
     },
     "HabitMonitor": {

@@ -12,8 +12,8 @@
       "SWIFT_VERSION": "5.0",
       "TARGETED_DEVICE_FAMILY": "1,2",
       "IPHONEOS_DEPLOYMENT_TARGET": "18.0",
-      "MARKETING_VERSION": "1.0",
-      "CURRENT_PROJECT_VERSION": "1",
+      "MARKETING_VERSION": "1.1",
+      "CURRENT_PROJECT_VERSION": "2",
       "CODE_SIGN_STYLE": "Automatic",
       "SWIFT_STRICT_CONCURRENCY": "minimal"
     }
@@ -42,8 +42,8 @@
           "CFBundleLocalizations": [
             "it"
           ],
-          "CFBundleShortVersionString": "1.0",
-          "CFBundleVersion": "1",
+          "CFBundleShortVersionString": "1.1",
+          "CFBundleVersion": "2",
           "UILaunchScreen": {},
           "UISupportedInterfaceOrientations": [
             "UIInterfaceOrientationPortrait",

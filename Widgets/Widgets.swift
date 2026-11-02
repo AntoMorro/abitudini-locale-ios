@@ -1,19 +1,25 @@
 import SwiftUI
 import WidgetKit
 import ActivityKit
+import AppIntents
 
-struct HabitEntry: TimelineEntry { var date: Date; var db: HabitDatabase; var available: Bool }
-struct HabitProvider: TimelineProvider {
+struct HabitEntry: TimelineEntry { var date: Date; var db: HabitDatabase; var available: Bool; var selectedID: String? }
+struct HabitWidgetChoice: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Abitudine da mostrare"
+    static var description = IntentDescription("Scegli un’abitudine, oppure lascia vuoto per le prime dell’elenco.")
+    @Parameter(title: "Abitudine") var habit: HabitEntity?
+}
+struct HabitProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> HabitEntry { HabitEntry(date: Date(), db: HabitEngine.demo(), available: true) }
-    func getSnapshot(in context: Context, completion: @escaping (HabitEntry) -> Void) { completion(entry()) }
-    func getTimeline(in context: Context, completion: @escaping (Timeline<HabitEntry>) -> Void) { completion(Timeline(entries: [entry()], policy: .after(Date().addingTimeInterval(15 * 60)))) }
+    func snapshot(for configuration: HabitWidgetChoice, in context: Context) async -> HabitEntry { var e = entry(); e.selectedID = configuration.habit?.id; return e }
+    func timeline(for configuration: HabitWidgetChoice, in context: Context) async -> Timeline<HabitEntry> { var e = entry(); e.selectedID = configuration.habit?.id; return Timeline(entries: [e], policy: .after(Date().addingTimeInterval(15 * 60))) }
     func entry() -> HabitEntry { guard let repo = HabitEnvironment.sharedRepository, let db = try? repo.read() else { return HabitEntry(date: Date(), db: HabitDatabase(), available: false) }; return HabitEntry(date: Date(), db: db, available: true) }
 }
 struct HabitWidgetView: View {
     var entry: HabitEntry
     var heatmap = false
     @Environment(\.widgetFamily) var family
-    var habits: [Habit] { Array(entry.db.habits.filter { !$0.archived }.prefix(4)) }
+    var habits: [Habit] { Array(entry.db.habits.filter { !$0.archived && (entry.selectedID == nil || $0.id.uuidString == entry.selectedID) }.prefix(4)) }
     var body: some View {
         Group {
             if !entry.available { Label("Apri Abitudini Locale e verifica l’archivio condiviso", systemImage: "leaf").font(.caption) }
@@ -32,9 +38,9 @@ struct HabitWidgetView: View {
                         else {
                             ForEach(family == .systemSmall ? Array(habits.prefix(1)) : habits) { h in
                                 HStack {
-                                    Image(systemName: h.symbol).foregroundStyle(.mint).frame(width: 20)
+                                    Image(systemName: h.symbol).foregroundStyle(h.color.paletteColor).frame(width: 20)
                                     VStack(alignment: .leading, spacing: 3) { Text(h.title).font(.caption.bold()).lineLimit(1); ProgressView(value: ratio(h)).tint(.mint) }
-                                    if [.check, .counter].contains(h.kind) { Button(intent: MarkHabitIntent(h)) { Image(systemName: ratio(h) >= 1 ? "checkmark.circle.fill" : "plus.circle.fill") }.buttonStyle(.plain).tint(.mint) }
+                                    if [.check, .counter].contains(h.kind) { Button(intent: ToggleHabitIntent(h)) { Image(systemName: Tracker.complete(h, db: entry.db, date: entry.date) ? "checkmark.circle.fill" : "plus.circle.fill") }.buttonStyle(.plain).tint(h.color.paletteColor) }
                                 }
                             }
                         }
@@ -47,7 +53,7 @@ struct HabitWidgetView: View {
         .foregroundStyle(.white)
         .widgetURL(URL(string: "abitudinilocale://home"))
     }
-    func ratio(_ h: Habit) -> Double { min(1, Double(HabitEngine.progress(h, in: entry.db, now: entry.date)) / Double(h.goal)) }
+    func ratio(_ h: Habit) -> Double { if entry.db.plan(h).quit { return Tracker.complete(h, db: entry.db, date: entry.date) ? 1 : 0 }; return min(1, Double(HabitEngine.progress(h, in: entry.db, now: entry.date)) / Double(h.goal)) }
     func heat(_ h: Habit) -> some View {
         let values = HabitEngine.heatmap(h, db: entry.db, days: family == .systemLarge ? 364 : 84)
         let columns = family == .systemSmall ? 14 : family == .systemMedium ? 21 : 28
@@ -56,11 +62,11 @@ struct HabitWidgetView: View {
 }
 struct ProgressHabitWidget: Widget {
     let kind = "AbitudiniProgress"
-    var body: some WidgetConfiguration { StaticConfiguration(kind: kind, provider: HabitProvider()) { HabitWidgetView(entry: $0) }.configurationDisplayName("Abitudini di oggi").description("Obiettivi, progressi e spunte rapide.").supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline]) }
+    var body: some WidgetConfiguration { AppIntentConfiguration(kind: kind, intent: HabitWidgetChoice.self, provider: HabitProvider()) { HabitWidgetView(entry: $0) }.configurationDisplayName("Abitudini di oggi").description("Scegli l’abitudine nelle opzioni del widget.").supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline]) }
 }
 struct HeatmapHabitWidget: Widget {
     let kind = "AbitudiniHeatmap"
-    var body: some WidgetConfiguration { StaticConfiguration(kind: kind, provider: HabitProvider()) { HabitWidgetView(entry: $0, heatmap: true) }.configurationDisplayName("Mappa delle abitudini").description("Dodici settimane, oppure un anno nel formato grande, per la prima abitudine.").supportedFamilies([.systemSmall, .systemMedium, .systemLarge]) }
+    var body: some WidgetConfiguration { AppIntentConfiguration(kind: kind, intent: HabitWidgetChoice.self, provider: HabitProvider()) { HabitWidgetView(entry: $0, heatmap: true) }.configurationDisplayName("Mappa delle abitudini").description("Scegli quale abitudine mostrare nelle opzioni.").supportedFamilies([.systemSmall, .systemMedium, .systemLarge]) }
 }
 struct FocusHabitActivity: Widget {
     var body: some WidgetConfiguration {

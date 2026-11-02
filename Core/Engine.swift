@@ -92,6 +92,7 @@ enum HabitEngine {
         let cards = Habit(title: "Ripassa 20 carte", symbol: "rectangle.on.rectangle", color: "blue", kind: .counter, goal: 20)
         let journal = Habit(title: "Scrivi una pagina", symbol: "pencil", color: "orange")
         db.habits = [study, cards, journal]
+        for i in db.habits.indices { db.habits[i].created = Calendar.current.date(byAdding: .day, value: -84, to: now)! }
         db.rules = [BlockRule(title: "Prima lo studio", habitIDs: [study.id, cards.id], unlockMinutes: 15)]
         for offset in 1...20 where offset % 4 != 0 { let date = Calendar.current.date(byAdding: .day, value: -offset, to: now)!; db.samples.append(ProgressSample(habitID: cards.id, day: day(date), key: "demo.\(offset)", amount: 20, date: date)) }
         return db

@@ -11,6 +11,8 @@ import FamilyControls
     @Published var protectionStatus = ""
     @Published private(set) var protectionReady = false
     @Published var routeHabit: Habit?
+    @Published var reminderStatus = ""
+    private var reminderTask: Task<Void, Never>?
     private(set) var readOnly = false
     let repository = HabitEnvironment.repository
     #if HEALTH
@@ -28,7 +30,7 @@ import FamilyControls
         do {
             db = try repository.update(body)
             if configure { try configureProtection() }
-            applyProtection(); WidgetCenter.shared.reloadAllTimelines(); return true
+            applyProtection(); WidgetCenter.shared.reloadAllTimelines(); syncReminders(); return true
         } catch { problem = error.localizedDescription; return false }
     }
     func applyProtection() {
@@ -77,6 +79,40 @@ import FamilyControls
     }
     func deleteRule(_ id: UUID) { change({ db in guard let rule = db.rules.first(where: { $0.id == id }) else { return }; guard !HabitEngine.locked(rule, now: Date()) else { throw HabitError.locked }; db.rules.removeAll { $0.id == id }; db.spends.removeAll { $0.ruleID == id } }, configure: true) }
     func add(_ habit: Habit, amount: Int = 1) { change { try HabitEngine.add(habit.id, amount: amount, db: &$0, now: Date()) } }
+    func syncReminders() {
+        reminderTask?.cancel()
+        reminderTask = Task { try? await Task.sleep(for: .milliseconds(350)); guard !Task.isCancelled else { return }; reminderStatus = await HabitReminders.sync(db) }
+    }
+    func toggleDay(_ habit: Habit, date: Date) {
+        let amount: Int? = Tracker.complete(habit, db: db, date: date) ? nil : 1
+        _ = recordDay(habit, date: date, amount: amount, note: db.note(habit, on: date))
+    }
+    @discardableResult func recordDay(_ h: Habit, date: Date, amount: Int?, note: String) -> Bool {
+        change { db in
+            guard !db.rules.contains(where: { $0.habitIDs.contains(h.id) && HabitEngine.locked($0, now: Date()) }) else { throw HabitError.locked }
+            try Tracker.record(h, db: &db, date: date, amount: amount, note: note)
+        }
+    }
+    @discardableResult func saveTrackedHabit(_ h: Habit, plan: HabitPlan) -> Bool {
+        var draft = db
+        if let i = draft.habits.firstIndex(where: { $0.id == h.id }) { draft.habits[i] = h } else { draft.habits.append(h) }
+        if draft.plans == nil { draft.plans = [:] }; draft.plans?[h.id.uuidString] = plan
+        guard HabitReminders.count(draft) <= 60 else { problem = "Riduci i promemoria: massimo 60 combinazioni giorno/orario tra tutte le abitudini."; return false }
+        return change({ db in
+            guard !db.rules.contains(where: { $0.habitIDs.contains(h.id) && (HabitEngine.locked($0, now: Date()) || plan.quit) }) else { throw HabitError.locked }
+            if h.archived && db.rules.contains(where: { $0.enabled && $0.habitIDs.contains(h.id) }) { throw HabitError.locked }
+            if let i = db.habits.firstIndex(where: { $0.id == h.id }) { db.habits[i] = h } else { db.habits.append(h) }
+            if db.plans == nil { db.plans = [:] }; db.plans?[h.id.uuidString] = plan
+        }, configure: true)
+    }
+    @discardableResult func deleteHabit(_ h: Habit) -> Bool {
+        change({ db in
+            guard !db.rules.contains(where: { $0.habitIDs.contains(h.id) }) else { throw HabitError.locked }
+            db.habits.removeAll { $0.id == h.id }; db.samples.removeAll { $0.habitID == h.id }
+            db.plans?[h.id.uuidString] = nil; db.notes = db.notes?.filter { !$0.key.hasPrefix(h.id.uuidString + "|") }
+            if db.timer?.habitID == h.id { db.timer = nil }
+        }, configure: true)
+    }
     func startTimer(_ habit: Habit) {
         change { db in HabitEngine.settleTimer(&db, now: Date()); db.timer = HabitTimer(habitID: habit.id, started: Date(), uptime: ProcessInfo.processInfo.systemUptime, background: habit.backgroundTimer) }
         LiveTimer.start(habit: habit, db: db)

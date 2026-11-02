@@ -35,7 +35,15 @@ struct HabitSettings: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Abitudini") {
+                    NavigationLink("Riordina abitudini") { HabitOrder() }
+                    Button("Abilita promemoria") { Task { do { _ = try await HabitReminders.authorize(); store.syncReminders() } catch { store.problem = error.localizedDescription } } }
+                    Text(store.reminderStatus).font(.caption).foregroundStyle(.secondary)
+                    ShareLink(item: Tracker.csv(store.db)) { Label("Esporta tutte le registrazioni CSV", systemImage: "tablecells") }
+                }
                 Section("Tempo di utilizzo") {
+                    NavigationLink("Blocchi e regole di sblocco") { BlocksView() }
+                    NavigationLink("Report Tempo di utilizzo") { List { ScreenTimeInsights() }.navigationTitle("Tempo di utilizzo") }
                     Text(store.protectionStatus).font(.subheadline)
                     Button("Autorizza Tempo di utilizzo") { Task { await store.authorize() } }
                     Text("L’autorizzazione è individuale e rimane revocabile dalle impostazioni di iOS. La membership Apple Developer Program serve alla firma della configurazione completa.").font(.caption).foregroundStyle(.secondary)
@@ -65,7 +73,7 @@ struct HabitSettings: View {
                 }
                 Section("Comandi Rapidi") { Text("Puoi aggiungere quantità, impostare il totale giornaliero e avviare o fermare timer. Le azioni sono disponibili anche per l’Action Button attraverso Comandi Rapidi. Per sorgenti esterne, le credenziali e le automazioni restano sotto il tuo controllo.").font(.caption) }
                 Section("Versione e copertura") {
-                    Text("Abitudini Locale 1.0 · app nativa indipendente, ispirata al flusso di Habits First di Eric Su. Non affiliata all’originale.").font(.caption)
+                    Text("Abitudini Locale 1.1 · interfaccia abitudini ispirata a HabitKit, blocchi ispirati a Habits First. App indipendente, non affiliata agli originali.").font(.caption)
                     Text("Non sono inclusi account/sync cloud, blocchi per posizione o Bluetooth, NFC, integrazioni dirette AnkiWeb, Duolingo, KOReader, Chess.com e servizi multimediali. Il timer di studio non include cicli automatici pausa/lavoro. Le funzioni disponibili dipendono dal pacchetto e dai profili di firma.").font(.caption).foregroundStyle(.secondary)
                 }
             }.navigationTitle("impostazioni")

@@ -1,6 +1,23 @@
 import AppIntents
 import WidgetKit
 
+struct ToggleHabitIntent: AppIntent {
+    static var title: LocalizedStringResource = "Registra abitudine dal widget"
+    @Parameter(title: "Abitudine") var habit: HabitEntity
+    init() {}
+    init(_ h: Habit) { habit = HabitEntity(id: h.id.uuidString, title: h.title) }
+    func perform() async throws -> some IntentResult {
+        guard let id = UUID(uuidString: habit.id) else { throw HabitError.invalid }
+        try HabitEnvironment.repository.update { db in
+            guard let h = db.habits.first(where: { $0.id == id }), !h.archived, [.check,.counter].contains(h.kind) else { throw HabitError.invalid }
+            guard !db.rules.contains(where: { $0.habitIDs.contains(h.id) && HabitEngine.locked($0, now: Date()) }) else { throw HabitError.locked }
+            let total: Int? = h.kind == .check ? (Tracker.complete(h, db: db, date: Date()) ? nil : 1) : min(1_000_000_000,Tracker.total(h, db: db, date: Date()) + db.plan(h).scale)
+            try Tracker.record(h, db: &db, date: Date(), amount: total)
+        }
+        WidgetCenter.shared.reloadAllTimelines(); await MainActor.run { NotificationCenter.default.post(name: .habitDataChanged, object: nil) }; return .result()
+    }
+}
+
 extension Notification.Name { static let habitDataChanged = Notification.Name("habitDataChanged") }
 struct HabitEntity: AppEntity {
     static var typeDisplayRepresentation: TypeDisplayRepresentation = "Abitudine"
