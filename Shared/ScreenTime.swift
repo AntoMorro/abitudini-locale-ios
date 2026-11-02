@@ -29,7 +29,13 @@ enum ScreenPolicy {
         }
         defaults?.set(ids, forKey: "knownRules")
     }
-    static func clear(_ db: HabitDatabase) { for r in db.rules { ManagedSettingsStore(named: .init(prefix + r.id.uuidString)).clearAllSettings() }; DeviceActivityCenter().stopMonitoring() }
+    static func clear(_ db: HabitDatabase) {
+        let defaults = UserDefaults(suiteName: HabitEnvironment.groupID)
+        let ids = Set(db.rules.map { $0.id.uuidString } + (defaults?.stringArray(forKey: "knownRules") ?? []))
+        for id in ids { ManagedSettingsStore(named: .init(prefix + id)).clearAllSettings() }
+        defaults?.set([], forKey: "knownRules")
+        DeviceActivityCenter().stopMonitoring()
+    }
     static func configure(_ db: HabitDatabase, now: Date = Date()) throws {
         guard HabitEnvironment.groupURL != nil else { throw HabitError.storage }
         let center = DeviceActivityCenter()
