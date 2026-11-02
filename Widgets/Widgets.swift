@@ -57,7 +57,7 @@ struct HabitWidgetView: View {
     func heat(_ h: Habit) -> some View {
         let values = HabitEngine.heatmap(h, db: entry.db, days: family == .systemLarge ? 364 : 84).map { date, ratio in (date, entry.db.plan(h).quit ? (Tracker.complete(h, db: entry.db, date: date) ? 1.0 : 0.0) : ratio) }
         let columns = family == .systemSmall ? 14 : family == .systemMedium ? 21 : 28
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: columns), spacing: 3) { ForEach(values.indices, id: \.self) { i in RoundedRectangle(cornerRadius: 2).fill(values[i].1 > 0 ? h.color.paletteColor.opacity(0.25 + values[i].1 * 0.75) : Color.gray.opacity(0.22)).aspectRatio(1, contentMode: .fit) } }
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 1), spacing: 3), count: columns), spacing: 3) { ForEach(values.indices, id: \.self) { i in RoundedRectangle(cornerRadius: 2).fill(values[i].1 > 0 ? h.color.paletteColor.opacity(0.25 + values[i].1 * 0.75) : Color.gray.opacity(0.22)).aspectRatio(1, contentMode: .fit) } }
     }
 }
 struct ProgressHabitWidget: Widget {

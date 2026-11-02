@@ -84,7 +84,7 @@ struct TrackerGrid: View {
         let today = cal.startOfDay(for: Date())
         let weekday = (cal.component(.weekday, from: today) - cal.firstWeekday + 7) % 7
         let start = cal.date(byAdding: .day, value: -((weeks - 1)*7 + weekday), to: today)!
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: weeks), spacing: 3) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 1), spacing: 3), count: weeks), spacing: 3) {
             ForEach(0..<(weeks*7), id: \.self) { index in
                 let column = index % weeks
                 let row = index / weeks
