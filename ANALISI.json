@@ -188,6 +188,21 @@
       "reminders_max_60_requests_daily_times_use_one_request",
       "widget_device_execution_pending"
     ],
-    "status": "source_implemented_compilation_and_tests_in_progress"
+    "status": "native_variants_built_20_core_tests_and_base_ui_flow_passed_device_signing_pending"
+  },
+  "apple_capability_snapshot": {
+    "checked_at": "2026-11-02",
+    "source": "https://developer.apple.com/help/account/reference/supported-capabilities-ios",
+    "app_groups": {
+      "ADP": true,
+      "ADEP": true,
+      "Apple_Developer": true
+    },
+    "family_controls_development": {
+      "ADP": true,
+      "ADEP": false,
+      "Apple_Developer": false
+    },
+    "sideloadly_free_account_widget_signing": "not_tested"
   }
 }

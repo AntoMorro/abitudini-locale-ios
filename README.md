@@ -90,10 +90,14 @@ Analisi delle funzioni pubbliche dell'originale e relative fonti: ANALISI.json.
 
 `swift test`, `brew install xcodegen`, poi `xcodegen generate --spec project.json` (Base), `project-widgets.json` oppure `project-full.json`. Apri AbitudiniLocale.xcodeproj. Il progetto usa framework Apple di sistema senza dipendenze esterne.
 
-## Verifica del pacchetto consegnato
+## Verifica della versione 1.1
 
-Il 2 novembre 2026 sono passati i 12 test del motore e la compilazione arm64 dei tre pacchetti, comprese le cinque estensioni della versione Completa. Gli IPA sono senza firma; gli hash sono in VERIFICA.json. L'ultimo test UI completo non è concluso: dopo un errore di inizializzazione del simulatore, due tentativi sono in coda sui runner GitHub. Non viene dichiarato un test UI superato. Nessuna installazione o prova delle capability sul telefono è stata eseguita.
+I risultati e gli hash degli IPA sono in VERIFICA.json. Sono passati i 20 test del motore e la compilazione nativa arm64 dei tre pacchetti. La verifica UI è riportata separatamente: nessuna prova sul telefono, delle notifiche reali, dei dati condivisi dei widget o dei blocchi Screen Time viene dedotta dalla sola compilazione. Gli IPA sono senza firma.
 
-Gli IPA derivano dal commit 8ed8425fb28ef43fd434074b210c3f13f31dd7e9; le revisioni successive modificano soltanto il test UI e la configurazione CI. Il codice applicativo e delle estensioni è identico.
+Il flusso UI Base è passato sul simulatore iPhone 16 Pro con iOS 18.5: creazione, spunta, nota, annullamento della spunta, statistiche e impostazioni. Durata del caso: 80,126 secondi. Le quattro schermate reali sono incluse in VerificaSchermate nello ZIP dei sorgenti consegnato. I dati “Lettura” delle schermate sono dati del test.
 
-Verifiche CI: https://github.com/AntoMorro/abitudini-locale-ios/actions
+Build e verifica riuscite: https://github.com/AntoMorro/abitudini-locale-ios/actions/runs/41520832819
+
+Il dettaglio e i grafici usano contenitori a scorrimento per evitare un ciclo del layout della lista nativa. Un probe diagnostico opzionale ha segnalato un errore nella propria asserzione di disponibilità, pur catturando il dettaglio renderizzato. Questo non viene dichiarato un probe superato: la prova funzionale principale è il test UI completo riuscito. Il relativo script diagnostico è stato corretto e controllato sintatticamente, senza ripetere la build applicativa già verificata.
+
+L’installazione fisica e la firma gratuita con App Group restano da eseguire. Il controllo Windows di Sideloadly non era disponibile durante la consegna; carica personalmente l’IPA e completa l’eventuale autenticazione Apple.
