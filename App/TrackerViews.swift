@@ -35,7 +35,15 @@ struct HabitBoard: View {
     func card(_ h: Habit, compact: Bool) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                NavigationLink { HabitDetail(habitID: h.id) } label: { HStack(spacing: 12) { Image(systemName: h.symbol).font(.title2).foregroundStyle(h.color.habitColor).frame(width: 44,height: 44).background(h.color.habitColor.opacity(0.13),in: RoundedRectangle(cornerRadius: 13)); VStack(alignment: .leading,spacing: 4) { Text(h.title).font(.headline).foregroundStyle(.primary).lineLimit(2); if !compact && !store.db.plan(h).description.isEmpty { Text(store.db.plan(h).description).font(.caption).foregroundStyle(.secondary).lineLimit(2) } } }.accessibilityIdentifier("detail-" + h.title)
+                NavigationLink { HabitDetail(habitID: h.id) } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: h.symbol).font(.title2).foregroundStyle(h.color.habitColor).frame(width: 44,height: 44).background(h.color.habitColor.opacity(0.13),in: RoundedRectangle(cornerRadius: 13))
+                        VStack(alignment: .leading,spacing: 4) {
+                            Text(h.title).font(.headline).foregroundStyle(.primary).lineLimit(2)
+                            if !compact && !store.db.plan(h).description.isEmpty { Text(store.db.plan(h).description).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
+                        }
+                    }
+                }.accessibilityIdentifier("detail-" + h.title)
                 Spacer(minLength: 2)
                 if !h.archived && h.kind == .check { Button { store.toggleDay(h, date: Date()) } label: { Image(systemName: Tracker.complete(h, db: store.db, date: Date()) ? "checkmark.circle.fill" : "circle").font(.title2) }.tint(h.color.habitColor).accessibilityLabel("Completa \(h.title)") }
                 else if !h.archived && h.kind == .counter { NavigationLink { HabitDetail(habitID: h.id) } label: { Image(systemName: "plus.circle").font(.title2) }.tint(h.color.habitColor) }
@@ -116,7 +124,7 @@ struct HabitDetail: View {
             }.navigationTitle(h.title).navigationBarTitleDisplayMode(.inline).toolbar { Button("Modifica") { editing = h } }
             .sheet(item: $editing) { HabitEditor(habit: $0) }
             .sheet(isPresented: $logging) { DayLog(habit: h, date: selected) }
-            .sheet(item: $shareCard) { card in NavigationStack { VStack(spacing: 24) { if let image = UIImage(contentsOfFile: card.url.path) { Image(uiImage: image).resizable().scaledToFit() }; ShareLink(item: card.url) { Label("Condividi immagine", systemImage: "square.and.arrow.up") }.buttonStyle(.borderedProminent) }.padding().navigationTitle("La tua costanza").toolbar { Button("Fine") { shareCard = nil } } }
+            .sheet(item: $shareCard) { card in HabitCardPreview(card: card) }
             .alert("Eliminare abitudine e storico?", isPresented: $deleting) { Button("Annulla", role: .cancel) {}; Button("Elimina", role: .destructive) { if store.deleteHabit(h) { dismiss() } } } message: { Text("Questa operazione cancella anche note e progressi. Le abitudini collegate a blocchi devono essere prima scollegate.") }
         } else { ContentUnavailableView("Abitudine non disponibile", systemImage: "archivebox") } }
     }
@@ -135,6 +143,18 @@ struct HabitDetail: View {
     }
 }
 struct SharedHabitCard: Identifiable { var url: URL; var id: URL { url } }
+struct HabitCardPreview: View {
+    var card: SharedHabitCard
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                if let image = UIImage(contentsOfFile: card.url.path) { Image(uiImage: image).resizable().scaledToFit() }
+                ShareLink(item: card.url) { Label("Condividi immagine", systemImage: "square.and.arrow.up") }.buttonStyle(.borderedProminent)
+            }.padding().navigationTitle("La tua costanza").toolbar { Button("Fine") { dismiss() } }
+        }
+    }
+}
 struct TrackerCalendar: View {
     var habit: Habit
     var db: HabitDatabase
