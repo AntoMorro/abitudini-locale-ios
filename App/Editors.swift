@@ -68,6 +68,7 @@ struct RuleEditor: View {
     @State private var fullDay = true
     @State private var commitment = false
     @State private var until = Date().addingTimeInterval(86400)
+    @FocusState private var naming: Bool
     #if SCREEN_TIME
     @State private var selected = FamilyActivitySelection()
     @State private var picking = false
@@ -75,7 +76,7 @@ struct RuleEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Blocco") { TextField("Nome blocco", text: $rule.title); Toggle("Attivo", isOn: $rule.enabled)
+                Section("Blocco") { TextField("Nome blocco", text: $rule.title).focused($naming).submitLabel(.done).onSubmit { naming = false }; Toggle("Attivo", isOn: $rule.enabled)
                     #if SCREEN_TIME
                     Button("Scegli app, categorie e siti") { picking = true }
                     Text("\(selected.applicationTokens.count) app · \(selected.categoryTokens.count) categorie · \(selected.webDomainTokens.count) siti").font(.caption).foregroundStyle(.secondary)
