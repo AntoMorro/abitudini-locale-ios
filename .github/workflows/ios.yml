@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: habits-${{ github.ref }}-${{ github.sha }}
+  group: habits-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   base:
@@ -76,7 +76,7 @@ jobs:
           retention-days: 7
   ui:
     name: iPhone habit and rule UI verification
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
