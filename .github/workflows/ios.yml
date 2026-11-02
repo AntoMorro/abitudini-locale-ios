@@ -103,6 +103,17 @@ jobs:
           if [ -d build/UITests.xcresult ]; then
             xcrun xcresulttool export attachments --path build/UITests.xcresult --output-path build/screenshots
           fi
+      - name: Collect app crash diagnostics
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p build/diagnostics
+          xcrun simctl spawn "$SIMULATOR_ID" log show --last 15m --style compact --predicate 'process == "AbitudiniLocale"' > build/diagnostics/app-runtime.log 2>&1 || true
+          python3 - <<'PY'
+          import pathlib, shutil
+          source = pathlib.Path.home() / 'Library/Logs/DiagnosticReports'
+          for path in source.glob('AbitudiniLocale*.ips'):
+              shutil.copy2(path, pathlib.Path('build/diagnostics') / path.name)
+          PY
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
@@ -110,4 +121,5 @@ jobs:
           path: |
             build/screenshots
             build-ui.log
+            build/diagnostics
           retention-days: 7
