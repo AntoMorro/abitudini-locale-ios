@@ -111,7 +111,8 @@ struct HabitDetail: View {
     var habit: Habit? { store.db.habits.first { $0.id == habitID } }
     var body: some View {
         Group { if let h = habit {
-            List {
+            ScrollView {
+              LazyVStack(alignment: .leading, spacing: 18) {
                 Section {
                     Label(h.title, systemImage: h.symbol).font(.title2.bold()).foregroundStyle(h.color.habitColor)
                     if !store.db.plan(h).description.isEmpty { Text(store.db.plan(h).description).foregroundStyle(.secondary) }
@@ -139,7 +140,8 @@ struct HabitDetail: View {
                     Button(h.archived ? "Ripristina abitudine" : "Archivia abitudine") { var next = h; next.archived.toggle(); _ = store.saveHabit(next) }
                     Button("Elimina abitudine", role: .destructive) { deleting = true }
                 }
-            }.navigationTitle(h.title).navigationBarTitleDisplayMode(.inline).toolbar { Button("Modifica") { editing = h } }
+              }.padding(20)
+            }.background(Color(uiColor: .systemGroupedBackground)).navigationTitle(h.title).navigationBarTitleDisplayMode(.inline).toolbar { Button("Modifica") { editing = h } }
             .sheet(item: $editing) { HabitEditor(habit: $0) }
             .sheet(isPresented: $logging) { [day = selected] in DayLog(habit: h, date: day) }
             .sheet(item: $shareCard) { card in HabitCardPreview(card: card) }
@@ -258,7 +260,22 @@ struct HabitOrder: View {
 }
 struct TrackerOverview: View {
     @EnvironmentObject var store: HabitStore
-    var body: some View { NavigationStack { List {
-        ForEach(store.db.habits.filter { !$0.archived }) { h in Section { NavigationLink { HabitDetail(habitID: h.id) } label: { Label(h.title, systemImage: h.symbol).foregroundStyle(h.color.habitColor) }; let stats = Tracker.stats(h, db: store.db); LabeledContent("Giorni completati", value: "\(stats.completions)"); LabeledContent("Tasso nei giorni previsti conclusi", value: stats.rate.formatted(.percent.precision(.fractionLength(0)))); LabeledContent("Serie / record", value: "\(stats.current) / \(stats.longest)"); MonthChart(habit: h, db: store.db) } }
-    }.navigationTitle("Statistiche") } }
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(spacing: 18) {
+                    ForEach(store.db.habits.filter { !$0.archived }) { h in
+                        VStack(alignment: .leading, spacing: 16) {
+                            NavigationLink { HabitDetail(habitID: h.id) } label: { Label(h.title, systemImage: h.symbol).font(.headline).foregroundStyle(h.color.habitColor) }
+                            let stats = Tracker.stats(h, db: store.db)
+                            LabeledContent("Giorni completati", value: "\(stats.completions)")
+                            LabeledContent("Tasso nei giorni previsti conclusi", value: stats.rate.formatted(.percent.precision(.fractionLength(0))))
+                            LabeledContent("Serie / record", value: "\(stats.current) / \(stats.longest)")
+                            MonthChart(habit: h, db: store.db)
+                        }.padding(18).background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+                    }
+                }.padding()
+            }.background(Color(uiColor: .systemGroupedBackground)).navigationTitle("Statistiche")
+        }
+    }
 }
