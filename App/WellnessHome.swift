@@ -28,8 +28,8 @@ struct WellnessHome:View {
             pagePicker
             if a.records.isEmpty {emptyState}
             else {switch page{case "Sonno":WellnessSleepView(date:date);case "Trend":WellnessTrends(date:date);default:overview}}
-            NavigationLink{WellnessRecordsView()}label:{WellnessUtilityRow(title:"Campioni, fonti ed esportazione",subtitle:"I tuoi dati, sempre sul dispositivo",symbol:"square.stack.3d.up",color:WellnessStyle.hrv)}.buttonStyle(.plain)
-            NavigationLink{WellnessShortcutsGuide()}label:{WellnessUtilityRow(title:"Comandi Rapidi e sincronizzazione",subtitle:"Importa e aggiorna le tue misure",symbol:"arrow.trianglehead.2.clockwise.rotate.90",color:WellnessStyle.sleep)}.buttonStyle(.plain)
+            NavigationLink{WellnessRecordsView()}label:{WellnessUtilityRow(title:"Campioni, fonti ed esportazione",subtitle:"I tuoi dati, sempre sul dispositivo",symbol:"square.stack.3d.up",color:WellnessStyle.hrv)}.buttonStyle(.plain).accessibilityIdentifier("wellnessRecords")
+            NavigationLink{WellnessShortcutsGuide()}label:{WellnessUtilityRow(title:"Comandi Rapidi e sincronizzazione",subtitle:"Importa e aggiorna le tue misure",symbol:"arrow.trianglehead.2.clockwise.rotate.90",color:WellnessStyle.sleep)}.buttonStyle(.plain).accessibilityIdentifier("wellnessShortcuts")
             Text("Dati importati · nessun monitoraggio in tempo reale").font(.caption2).foregroundStyle(.secondary).frame(maxWidth:.infinity).padding(.bottom,12)
         }.padding(.horizontal,20).padding(.top,8)}
         .background(Color(uiColor:.systemGroupedBackground)).navigationTitle("Salute").navigationBarTitleDisplayMode(.inline)
@@ -51,7 +51,7 @@ struct WellnessHome:View {
             Spacer();if let last=a.records.map(\.imported).max(){VStack(alignment:.trailing,spacing:2){Text("Ultimo aggiornamento").font(.caption2);Text(last,style:.relative).font(.caption.weight(.medium))}.foregroundStyle(.secondary)}
         }
     }}
-    private var pagePicker:some View {HStack(spacing:6){ForEach([("Oggi","square.grid.2x2"),("Sonno","moon.stars"),("Trend","chart.xyaxis.line")],id:\.0){title,symbol in Button{page=title}label:{Label(title,systemImage:symbol).font(.subheadline.weight(.semibold)).frame(maxWidth:.infinity).padding(.vertical,12).background(page==title ? Color(uiColor:.secondarySystemGroupedBackground):.clear,in:Capsule())}.buttonStyle(.plain).foregroundStyle(page==title ? Color.primary:Color.secondary).accessibilityAddTraits(page==title ? .isSelected:[])}}.padding(5).background(Color.primary.opacity(0.045),in:Capsule())}
+    private var pagePicker:some View {HStack(spacing:6){ForEach([("Oggi","square.grid.2x2"),("Sonno","moon.stars"),("Trend","chart.xyaxis.line")],id:\.0){title,symbol in Button{page=title}label:{Label(title,systemImage:symbol).font(.subheadline.weight(.semibold)).frame(maxWidth:.infinity).padding(.vertical,12).background(page==title ? Color(uiColor:.secondarySystemGroupedBackground):.clear,in:Capsule())}.buttonStyle(.plain).foregroundStyle(page==title ? Color.primary:Color.secondary).accessibilityIdentifier("wellnessPage"+title).accessibilityAddTraits(page==title ? .isSelected:[])}}.padding(5).background(Color.primary.opacity(0.045),in:Capsule())}
     private var emptyState:some View {VStack(alignment:.leading,spacing:18){Image(systemName:"heart.text.clipboard").font(.system(size:36)).foregroundStyle(WellnessStyle.hrv);Text("Il tuo spazio,\ni tuoi dati.").font(.system(size:28,weight:.bold,design:.rounded));Text("Aggiungi i comandi una volta. Poi importa HRV, battito a riposo e sonno con un tocco.").foregroundStyle(.secondary);NavigationLink("Configura i comandi"){WellnessShortcutsGuide()}.buttonStyle(.borderedProminent).tint(WellnessStyle.hrv)}.wellnessSurface()}
     private var overview:some View {
         let h=WellnessAnalysis.daily(a,metric:.hrv),r=WellnessAnalysis.daily(a,metric:.rhr)
@@ -76,7 +76,7 @@ struct WellnessHome:View {
 struct WellnessToolsMenu:View {
     @Environment(\.dismiss) private var dismiss
     var body:some View {List{
-        Section("Dati"){NavigationLink("Importa file o testo JSON"){WellnessImportView()};NavigationLink("Campioni, fonti ed esportazione"){WellnessRecordsView()};NavigationLink("Comandi Rapidi e sincronizzazione"){WellnessShortcutsGuide()}}
+        Section("Dati"){NavigationLink("Importa file o testo JSON"){WellnessImportView()};NavigationLink("Campioni, fonti ed esportazione"){WellnessRecordsView()};NavigationLink("Comandi Rapidi e sincronizzazione"){WellnessShortcutsGuide()}.accessibilityIdentifier("wellnessToolsShortcuts")}
         Section("Personalizza"){NavigationLink("Preferenze Salute"){WellnessSettings()};NavigationLink("Allenamento e carico"){ScrollView{WellnessTraining(date:Date()).padding(20)}.navigationTitle("Allenamento")};NavigationLink("Metodi e limiti"){WellnessMethods()}}
     }.navigationTitle("Strumenti Salute").toolbar{ToolbarItem(placement:.confirmationAction){Button("Fine"){dismiss()}}}}
 }
@@ -161,8 +161,10 @@ struct WellnessTrends:View {
     var date:Date
     @State private var metric:WellnessMetric = .hrv
     @State private var days=28
-    var body:some View{VStack(alignment:.leading,spacing:18){Picker("Metrica",selection:$metric){ForEach(WellnessMetric.allCases.filter{![.sleep,.workout].contains($0)}){Text($0.title).tag($0)}};Picker("Periodo",selection:$days){Text("7 giorni").tag(7);Text("28 giorni").tag(28);Text("90 giorni").tag(90)}.pickerStyle(.segmented);WellnessMetricChart(metric:metric,date:date,days:days)
-        Text("Confronti personali").font(.title2.bold())
+    var body:some View{VStack(alignment:.leading,spacing:18){
+        VStack(spacing:14){Picker("Misura",selection:$metric){ForEach(WellnessMetric.allCases.filter{![.sleep,.workout].contains($0)}){Text($0.title).tag($0)}}.pickerStyle(.menu);Picker("Periodo",selection:$days){Text("7 giorni").tag(7);Text("28 giorni").tag(28);Text("90 giorni").tag(90)}.pickerStyle(.segmented)}.wellnessSurface()
+        WellnessMetricChart(metric:metric,date:date,days:days)
+        DisclosureGroup("Confronti con il tuo diario"){VStack(alignment:.leading,spacing:14){
         let h=WellnessAnalysis.daily(store.wellness,metric:.hrv),r=WellnessAnalysis.daily(store.wellness,metric:.rhr)
         let begin=Calendar.current.date(byAdding:.day,value:-days,to:date)!
         let pairs=h.filter{$0.date>=begin && $0.date<=date}.compactMap{p -> (Double,Double)? in guard let other=r.first(where:{$0.date==p.date}) else{return nil};return(p.value,other.value)}
@@ -175,6 +177,7 @@ struct WellnessTrends:View {
             Text("#\(tag): HRV media "+WellnessFormat.number(WellnessAnalysis.mean(selected.map(\.value)))+" ms · \(selected.count) giorni").font(.caption)
         }
         Text("I tag associano le pagine al giorno della misura, non attribuiscono effetti alle abitudini. Le somme di passi ed energia si riferiscono solo ai campioni importati; evita di mescolare i totali con i singoli segmenti o più fonti sovrapposte.").font(.caption)
+        }.padding(.top,12)}.wellnessSurface()
     }}
 }
 struct WellnessTraining:View {

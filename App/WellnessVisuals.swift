@@ -65,11 +65,12 @@ struct WellnessMetricTile:View {
 }
 
 struct WellnessRecoveryHero:View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     var readiness:WellnessReadiness
     var body:some View {
-        ViewThatFits(in:.horizontal){
-            HStack(spacing:20){copy;ring}
-            VStack(alignment:.leading,spacing:20){copy;ring.frame(maxWidth:.infinity)}
+        Group {
+            if typeSize.isAccessibilitySize {VStack(alignment:.leading,spacing:20){copy;ring.frame(maxWidth:.infinity)}}
+            else {HStack(spacing:16){copy;ring}}
         }.padding(24).frame(maxWidth:.infinity,alignment:.leading)
             .foregroundStyle(.white).background(WellnessStyle.ink.gradient,in:RoundedRectangle(cornerRadius:30))
     }
@@ -78,12 +79,12 @@ struct WellnessRecoveryHero:View {
         Text(readiness.score == nil ? "Ogni giorno\nconta.":"Ascolta il\ntuo ritmo.").font(.system(size:28,weight:.bold,design:.rounded)).fixedSize(horizontal:false,vertical:true)
         Text(readiness.score == nil ? "\(readiness.baselineDays) / 14 giorni di baseline":"Indice personale · sperimentale").font(.caption).foregroundStyle(.white.opacity(0.75))
         Label("Esplora il recupero",systemImage:"arrow.up.right").font(.caption.weight(.semibold)).padding(.top,4)
-    }.frame(minWidth:135,maxWidth:.infinity,alignment:.leading)}
+    }.frame(minWidth:110,maxWidth:.infinity,alignment:.leading)}
     private var ring:some View {ZStack{
         Circle().stroke(.white.opacity(0.12),lineWidth:11)
         if let score=readiness.score{Circle().trim(from:0,to:min(1,max(0,score/100))).stroke(WellnessStyle.lime,style:StrokeStyle(lineWidth:11,lineCap:.round)).rotationEffect(.degrees(-90))}
         VStack(spacing:2){Text(readiness.score.map{String(Int($0.rounded()))} ?? "—").font(.system(size:44,weight:.bold,design:.rounded));Text(readiness.score == nil ? "in costruzione":"su 100").font(.caption2).foregroundStyle(.white.opacity(0.7))}
-    }.frame(width:128,height:128).accessibilityElement(children:.ignore).accessibilityLabel(readiness.score.map{"Recupero sperimentale \(Int($0)) su 100"} ?? "Baseline in costruzione")}
+    }.frame(width:118,height:118).accessibilityElement(children:.ignore).accessibilityLabel(readiness.score.map{"Recupero sperimentale \(Int($0)) su 100"} ?? "Baseline in costruzione")}
 }
 
 struct WellnessUtilityRow:View {
@@ -96,6 +97,7 @@ struct WellnessUtilityRow:View {
 extension HabitStore {
     func seedWellnessPreview(){
         guard HabitEnvironment.testing,ProcessInfo.processInfo.arguments.contains("--wellness-preview") else{return}
+        change {db in db.theme=ProcessInfo.processInfo.arguments.contains("--wellness-dark") ? "dark":"light"}
         wellnessChange {a in
             a=WellnessArchive();let cal=Calendar.current,now=Date()
             for i in 0..<30 {
