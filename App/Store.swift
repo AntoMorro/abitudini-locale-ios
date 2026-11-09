@@ -161,6 +161,7 @@ import FamilyControls
             for i in restored.rules.indices { restored.rules[i].enabled = false; restored.rules[i].session = nil; restored.rules[i].activitySelection = nil; restored.rules[i].commitmentUntil = nil }
             for i in restored.habits.indices where restored.habits[i].kind == .appTime { restored.habits[i].activitySelection = nil }
             if restored.journal == nil { restored.journal = db.journal }
+            if restored.wellness == nil { restored.wellness = db.wellness }
             restored.timer = nil
             restored.emergencyUses = min(restored.emergencyUses, db.emergencyUses)
             restored.emergencyUntil = nil

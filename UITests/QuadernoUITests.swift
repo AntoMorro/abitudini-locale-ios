@@ -16,4 +16,18 @@ final class QuadernoUITests:XCTestCase {
         app.tabBars.buttons["Altro"].tap();app.buttons["Apple Watch e cattura rapida"].tap();XCTAssertTrue(app.staticTexts["Un pensiero, al polso."].waitForExistence(timeout:8));shot("06-AppleWatch")
         app.navigationBars.buttons.element(boundBy:0).tap();app.buttons["Modelli e raccolte"].tap();XCTAssertTrue(app.staticTexts["Gratitudine"].waitForExistence(timeout:8));shot("07-Modelli")
     }
+    func testLocalHealthSection() {
+        let app=XCUIApplication();app.launchArguments=["--ui-testing"];app.launch()
+        if app.buttons["Inizia"].waitForExistence(timeout:8){app.buttons["Inizia"].tap()}
+        XCTAssertTrue(app.buttons["Salute personale"].waitForExistence(timeout:10));app.buttons["Salute personale"].tap()
+        XCTAssertTrue(app.buttons["Aggiungi"].waitForExistence(timeout:8));app.buttons["Aggiungi"].tap()
+        let value=app.textFields["wellnessManualValue"];XCTAssertTrue(value.waitForExistence(timeout:8));value.tap();value.typeText("42")
+        app.buttons["Salva campione"].tap();XCTAssertTrue(app.staticTexts["HRV · SDNN"].firstMatch.waitForExistence(timeout:8));shot("08-Salute")
+        app.buttons["Recupero"].tap();shot("09-Recupero")
+        app.buttons["Sonno"].tap();shot("10-Sonno")
+        app.buttons["Trend"].tap();shot("11-Trend")
+        app.swipeUp();app.swipeUp()
+        app.buttons["Comandi Rapidi e sincronizzazione"].tap();XCTAssertTrue(app.buttons["Apri Comandi Rapidi"].waitForExistence(timeout:8));shot("12-ComandiSalute")
+    }
+
 }

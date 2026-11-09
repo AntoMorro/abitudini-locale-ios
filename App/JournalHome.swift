@@ -20,7 +20,7 @@ struct JournalToday:View {
                 ForEach(store.journal.pages.filter{JournalEngine.day($0.date)==JournalEngine.day(Date())}.sorted{$0.updated>$1.updated}){JournalPageCard(page:$0)}
             }.padding(20)}
             .background{JournalPaper()}.navigationTitle("Quaderno").navigationBarTitleDisplayMode(.inline)
-            .toolbar{NavigationLink{JournalPreferencesView()}label:{Image(systemName:"gearshape")}.accessibilityLabel("Preferenze quaderno")}
+            .toolbar{NavigationLink{WellnessHome()}label:{Image(systemName:"heart.text.clipboard")}.accessibilityLabel("Salute personale");NavigationLink{JournalPreferencesView()}label:{Image(systemName:"gearshape")}.accessibilityLabel("Preferenze quaderno")}
             .sheet(item:$draft){JournalPageEditor(page:$0)}
         }
     }

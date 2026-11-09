@@ -6,6 +6,7 @@ import SwiftUI
 }
 struct HabitRoot: View {
     @EnvironmentObject var store: HabitStore
+    @State private var showingWellness=false
     @Environment(\.scenePhase) var phase
     var body: some View {
         Group {
@@ -23,6 +24,8 @@ struct HabitRoot: View {
         .alert("Abitudini Locale", isPresented: Binding(get: { store.problem != nil }, set: { if !$0 { store.problem = nil } })) { Button("OK") { store.problem = nil } } message: { Text(store.problem ?? "") }
         .onChange(of: phase) { _, next in JournalPrivacy.shared.update(enabled:store.journal.preferences.lock,active:next == .active,background:next == .background); if next == .active { store.refresh(); store.syncReminders(); Task { await store.refreshHealth() } } else if next == .inactive { store.background() } }
         .onChange(of: store.journal.preferences.lock) { _, enabled in JournalPrivacy.shared.update(enabled:enabled,active:phase == .active,background:phase == .background) }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("wellness.open"))) { _ in showingWellness=true }
+        .sheet(isPresented:$showingWellness){NavigationStack{WellnessHome().toolbar{Button("Fine"){showingWellness=false}}}}
         .onReceive(NotificationCenter.default.publisher(for: .habitDataChanged)) { _ in store.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in store.refresh() }
         .onOpenURL { url in if let id = UUID(uuidString: url.lastPathComponent), let h = store.db.habits.first(where: { $0.id == id }) { store.routeHabit = h } }
