@@ -32,6 +32,10 @@ final class WellnessTests:XCTestCase {
         var a=WellnessArchive();try a.merge([segment(date(1,22),date(2,7),.asleep),record(.hrv,40,date(1,23)),record(.hrv,100,date(2,10))],now:date(30));a.preferences.nocturnalHRV=true
         let points=WellnessAnalysis.daily(a,metric:.hrv,calendar:cal);XCTAssertEqual(points.count,1);XCTAssertEqual(points[0].date,cal.startOfDay(for:date(2)));XCTAssertEqual(points[0].value,40)
     }
+    func testNocturnalHRVExcludesAwakeOverrideInsideGenericSleep()throws{
+        var a=WellnessArchive();try a.merge([segment(date(1,22),date(2,7),.asleep),segment(date(2,2),date(2,4),.awake),record(.hrv,40,date(2,1)),record(.hrv,100,date(2,3))],now:date(30));a.preferences.nocturnalHRV=true
+        let points=WellnessAnalysis.daily(a,metric:.hrv,calendar:cal);XCTAssertEqual(points.count,1);XCTAssertEqual(points[0].value,40);XCTAssertEqual(points[0].count,1)
+    }
     func baseline()throws->WellnessArchive{
         var a=WellnessArchive();for d in 1...15{try a.merge([record(.hrv,40,date(d)),record(.rhr,60,date(d))],now:date(30))};return a
     }

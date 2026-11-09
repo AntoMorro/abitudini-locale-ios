@@ -21,8 +21,13 @@ enum WellnessAnalysis {
         var list=records(a,metric:metric)
         if metric == .hrv && a.preferences.nocturnalHRV {
             // Match actual imported asleep intervals, never infer that a clock hour was sleep.
-            let sleeps=records(a,metric:.sleep).filter{$0.phase?.sleeping == true}
-            list=list.filter{r in sleeps.contains{s in r.start>=s.start && r.start<s.end}}
+            var resolved:[Date:[WellnessSleepSpan]]=[:]
+            list=list.filter{r in
+                let midnight=calendar.startOfDay(for:r.start)
+                let wakeDay=calendar.component(.hour,from:r.start)>=12 ? calendar.date(byAdding:.day,value:1,to:midnight)!:midnight
+                if resolved[wakeDay] == nil {resolved[wakeDay]=sleep(a,on:wakeDay,calendar:calendar).timeline.filter{$0.phase.sleeping}}
+                return resolved[wakeDay]!.contains{r.start >= $0.start && r.start < $0.end}
+            }
         }
         let groups=Dictionary(grouping:list){ r in
             let d=calendar.startOfDay(for:r.start)
