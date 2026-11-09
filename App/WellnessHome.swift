@@ -19,14 +19,14 @@ struct WellnessHome:View {
     var body:some View {ScrollView{LazyVStack(alignment:.leading,spacing:22){
         HStack{Image(systemName:"heart.fill").foregroundStyle(.pink);Text("Il tuo osservatorio personale").font(.system(.title,design:.serif,weight:.semibold))}
         Text("Importazioni locali, misure con una storia.").foregroundStyle(.secondary)
-        HStack{NavigationLink("Importa",systemImage:"square.and.arrow.down"){WellnessImportView()};Spacer();Button("Aggiungi",systemImage:"plus"){manual=true};Spacer();NavigationLink{WellnessSettings()}label:{Image(systemName:"gearshape")}.accessibilityLabel("Preferenze Salute")}
+        HStack{NavigationLink{WellnessImportView()}label:{Label("Importa",systemImage:"square.and.arrow.down")};Spacer();Button("Aggiungi",systemImage:"plus"){manual=true};Spacer();NavigationLink{WellnessSettings()}label:{Image(systemName:"gearshape")}.accessibilityLabel("Preferenze Salute")}
         Picker("Sezione Salute",selection:$page){ForEach(["Oggi","Recupero","Sonno","Trend","Carico"],id:\.self){Text($0)}}.pickerStyle(.segmented)
         DatePicker("Data osservata",selection:$date,in:...Date(),displayedComponents:.date)
         if a.records.isEmpty{ContentUnavailableView("Inizia dai tuoi dati",systemImage:"heart.text.clipboard",description:Text("Importa HRV, frequenza a riposo e segmenti sonno da Comandi Rapidi. I grafici si riempiranno soltanto con i campioni ricevuti."));NavigationLink("Configura i comandi"){WellnessShortcutsGuide()}}
         else {switch page{case "Recupero":WellnessRecovery(date:date);case "Sonno":WellnessSleepView(date:date);case "Trend":WellnessTrends(date:date);case "Carico":WellnessTraining(date:date);default:overview}}
-        NavigationLink("Comandi Rapidi e sincronizzazione",systemImage:"square.stack.3d.up"){WellnessShortcutsGuide()}
-        NavigationLink("Campioni, fonti ed esportazione",systemImage:"list.bullet.rectangle"){WellnessRecordsView()}
-        NavigationLink("Metodi, fonti e funzioni disponibili",systemImage:"info.circle"){WellnessMethods()}
+        NavigationLink{WellnessShortcutsGuide()}label:{Label("Comandi Rapidi e sincronizzazione",systemImage:"square.stack.3d.up")}
+        NavigationLink{WellnessRecordsView()}label:{Label("Campioni, fonti ed esportazione",systemImage:"list.bullet.rectangle")}
+        NavigationLink{WellnessMethods()}label:{Label("Metodi, fonti e funzioni disponibili",systemImage:"info.circle")}
     }.padding(20)}.navigationTitle("Salute").background(Color(uiColor:.systemGroupedBackground)).sheet(isPresented:$manual){WellnessManual()}}
     private var overview:some View {VStack(alignment:.leading,spacing:18){
         let h=WellnessAnalysis.daily(a,metric:.hrv).first{Calendar.current.isDate($0.date,inSameDayAs:date)}
@@ -83,9 +83,11 @@ struct WellnessSleepView:View {
             Text("La tua notte").font(.title2.bold());WellnessCard(title:"Tempo addormentato",value:s.seconds>0 ? WellnessFormat.hours(s.seconds):"—",unit:s.source)
             if s.seconds>0{
                 HStack{WellnessCard(title:"Obiettivo raggiunto",value:String(Int(min(100,100*s.seconds/goal))),unit:"% di \(a.preferences.sleepGoal.formatted()) ore");WellnessCard(title:"Efficienza a letto",value:WellnessFormat.number(s.efficiency),unit:s.efficiency==nil ? "Servono segmenti a letto":"%")}
-                ForEach(WellnessPhase.allCases){p in if let seconds=s.phases[p.rawValue],seconds>0{HStack{Text(p.title);Spacer();Text(WellnessFormat.hours(seconds)).monospacedDigit()}}}
+                if s.inBedSeconds>0{HStack{Text("Tempo a letto");Spacer();Text(WellnessFormat.hours(s.inBedSeconds))}}
+                ForEach(WellnessPhase.allCases.filter{$0 != .inBed}){p in if let seconds=s.phases[p.rawValue],seconds>0{HStack{Text(p.title);Spacer();Text(WellnessFormat.hours(seconds)).monospacedDigit()}}}
                 if let start=s.start,let end=s.end{Text(start.formatted(date:.abbreviated,time:.shortened)+" → "+end.formatted(date:.abbreviated,time:.shortened)).font(.caption)}
             }
+            if !s.timeline.isEmpty {Chart(s.timeline){span in RectangleMark(xStart:.value("Inizio",span.start),xEnd:.value("Fine",span.end),y:.value("Fase",span.phase.title)).foregroundStyle(by:.value("Fase",span.phase.title))}.frame(height:160).accessibilityLabel("Fasi del sonno importate nella notte")}
             let nights=(0..<14).reversed().map{WellnessAnalysis.sleep(a,on:Calendar.current.date(byAdding:.day,value:-$0,to:Calendar.current.startOfDay(for:date))!)}
             let valid=nights.filter{$0.seconds>0}
             Chart(Array(valid.enumerated()),id:\.offset){_,n in BarMark(x:.value("Notte",n.date,unit:.day),y:.value("Ore",n.seconds/3600)).foregroundStyle(.indigo)}.frame(height:170)

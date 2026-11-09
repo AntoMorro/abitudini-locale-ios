@@ -1,8 +1,9 @@
 import Foundation
 
 struct WellnessPoint: Identifiable { var date:Date; var value:Double; var count:Int; var id:Date{date} }
+struct WellnessSleepSpan:Identifiable {var start:Date;var end:Date;var phase:WellnessPhase;var id:String{String(start.timeIntervalSince1970)+phase.rawValue}}
 struct WellnessSleep {
-    var date:Date; var source:String; var phases:[String:Double]; var start:Date?;var end:Date?;var efficiency:Double?
+    var date:Date; var source:String; var phases:[String:Double]; var start:Date?;var end:Date?;var efficiency:Double?;var inBedSeconds:Double;var timeline:[WellnessSleepSpan]
     var seconds:Double { WellnessPhase.allCases.filter(\.sleeping).reduce(0){$0+(phases[$1.rawValue] ?? 0)} }
 }
 struct WellnessReadiness { var score:Double?;var reason:String;var hrvZ:Double?;var rhrZ:Double?;var baselineDays:Int }
@@ -48,14 +49,15 @@ enum WellnessAnalysis {
         let chosen=grouped[origin] ?? []
         let bounds=Array(Set(chosen.flatMap{[max(begin,$0.start),min(end,$0.end)]})).sorted()
         var phases:[String:Double]=[:],first:Date?,last:Date?,bed=0.0,sleepInBed=0.0
+        var timeline:[WellnessSleepSpan]=[]
         if bounds.count>1 {for i in 0..<(bounds.count-1) {
             let l=bounds[i],r=bounds[i+1],mid=l.addingTimeInterval(r.timeIntervalSince(l)/2)
             let active=chosen.filter{$0.start<=mid && $0.end>mid};guard let phase=active.compactMap(\.phase).max(by:{$0.rank<$1.rank}) else{continue}
-            let seconds=r.timeIntervalSince(l);phases[phase.rawValue,default:0]+=seconds
+            let seconds=r.timeIntervalSince(l);phases[phase.rawValue,default:0]+=seconds;timeline.append(WellnessSleepSpan(start:l,end:r,phase:phase))
             let inBed=active.contains{$0.phase == .inBed};if inBed{bed+=seconds}
             if phase.sleeping {first=first ?? l;last=r;if inBed{sleepInBed+=seconds}}
         }}
-        return WellnessSleep(date:date,source:origin,phases:phases,start:first,end:last,efficiency:bed>0 ? 100*sleepInBed/bed:nil)
+        return WellnessSleep(date:date,source:origin,phases:phases,start:first,end:last,efficiency:bed>0 ? 100*sleepInBed/bed:nil,inBedSeconds:bed,timeline:timeline)
     }
     static func unionSeconds(_ intervals:[DateInterval])->Double {
         let sorted=intervals.sorted{$0.start<$1.start};guard var current=sorted.first else{return 0};var total=0.0

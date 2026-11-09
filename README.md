@@ -1,43 +1,37 @@
-# Quaderno Locale 2.0
+# Quaderno Locale 2.1 — Salute in locale
 
-Aggiornamento nativo di Abitudini Locale: bullet journal, diario e tracker in un'unica app iPhone/iPad. Mantiene `local.abitudinilocale.habits` e la cartella del vecchio archivio. Il backup precedente è compatibile. Per aggiornare senza perdere dati, esportare una copia e installare sopra l'app con lo stesso Apple ID e la stessa configurazione di bundle ID usata in Sideloadly; non disinstallare l'app.
+Un unico archivio per journal, abitudini e Salute. Stesso bundle ID `local.abitudinilocale.habits`, stessa cartella Application Support/AbitudiniLocale/abitudini.json. Aggiornare sopra l’app precedente con stesso Apple ID e stessa configurazione di bundle ID in Sideloadly. Prima esportare un backup; non disinstallare.
 
-## Bullet journal e diario
+## Salute
 
-Registro rapido con attività, eventi e note; importanza, completamento, annullamento e migrazione esplicita. Giorno/settimana/mese/future log sono viste degli stessi elementi, senza creare copie automatiche. Le ricorrenze giornaliere, feriali, settimanali e mensili generano una prossima istanza al completamento; una richiesta ripetuta non genera duplicati. I promemoria precedenti non si trasferiscono automaticamente alle nuove istanze.
+Oggi → icona cuore oppure Altro → Apri Salute. La sezione comprende panoramica, recupero personale, sonno, trend e carico degli allenamenti. Non richiede HealthKit nella firma: Comandi Rapidi legge i dati dopo il consenso dell’utente e li passa alle azioni native di importazione. Il percorso precedente Salute → Comandi Rapidi → nota è stato confermato dall’utente; le nuove azioni strutturate richiedono collaudo sul dispositivo dopo l’aggiornamento.
 
-Quaderni personalizzabili e archiviabili, indice numerato, ricerca nel testo e nelle etichette, preferiti, ricordi degli anni precedenti. Dieci modelli originali: pagina libera, mattino, sera, gratitudine, settimana, mese, lettura, raccolte, progetti e visione annuale. Check-in con umore, energia e ore di sonno inserite manualmente; grafico descrittivo degli ultimi 30 giorni e vista annuale «un anno in pixel» con accesso alle pagine di ogni giorno.
+- HRV SDNN e frequenza a riposo con date originali, fonte e unità; importazioni ripetute aggiornano i campioni. HRV in secondi normalizzata in millisecondi, senza convertire SDNN in RMSSD.
+- Sonno per segmenti, fasi, durata, efficienza quando sono presenti intervalli a letto, obiettivo personale, deficit osservato e regolarità del risveglio. Risoluzione degli intervalli sovrapposti e una sola fonte per notte.
+- Grafici e statistiche a 7/28/90 giorni; correlazione HRV/riposo con numerosità e collegamenti descrittivi ai tag del diario. Giorni senza dati assenti dal grafico, mai riempiti con zero.
+- Baseline robusta dei 28 giorni precedenti, almeno 14 giorni appaiati; esclusione del giorno corrente e sospensione dell’indice in caso di fonti miste non selezionate. L’indice composito è una formula originale sperimentale spiegata nell’app, non un algoritmo Athlytic o una percentuale fisiologica validata.
+- Registro allenamenti manuale/JSON con session-RPE (minuti × RPE). Copertura dei giorni confermata dall’utente, includendo il riposo. Medie 7/28 giorni, rapporto, monotonia e strain soltanto con dati sufficienti. Nessuna previsione di infortuni.
+- Archivio campioni con modifica/eliminazione, selezione delle fonti, importazione JSON atomica con anteprima, esportazione e backup completo. Supporto generico opzionale per battito, respirazione, SpO₂, temperatura, peso, VO₂ max, passi ed energia: richiedono campioni espliciti nelle unità indicate.
 
-Foto selezionate con il picker di sistema e ridimensionate; disegni a mano libera con PencilKit; audio fino a 120 secondi. Massimo quattro foto per pagina. Il backup JSON comprende anche gli allegati. Esportazione Markdown testuale e PDF con foto/disegni; l'audio rimane nel backup, non nel PDF. Protezione visiva dell'accesso con autenticazione del dispositivo e copertura delle schermate quando si esce dall'app. I backup esportati non sono cifrati dall'app.
+## Comandi nell’app
 
-Il tracker precedente resta disponibile con storico, calendari, contatori, obiettivi e statistiche. I vecchi backup senza journal conservano il journal già presente durante il ripristino. Un backup completo contenente journal sostituisce invece l'archivio previa conferma nell'interfaccia esistente.
+Sono disponibili le azioni `Importa HRV nel quaderno`, `Importa frequenza a riposo nel quaderno`, `Importa segmento sonno nel quaderno` e `Importa dati Salute JSON nel quaderno`. L’app contiene una guida e pulsanti per aprire/eseguire i comandi salvati, con nomi configurabili. I tre comandi vanno creati una volta in Comandi Rapidi sull’iPhone: l’app non può installarli o concedersi i permessi in silenzio. Per i dettagli vedere SALUTE-COMANDI.md.
 
-## Apple Watch Ultra
+## Privacy e compatibilità
 
-La companion watchOS 11+ contiene cattura con tastiera/dettatura di sistema, umore e completamento di attività/abitudini a spunta. Le altre abitudini vengono mostrate in sola lettura. Una coda locale conserva le azioni e le rimuove solo dopo una conferma dell'iPhone. I comandi hanno un identificatore; note e completamenti sono idempotenti. Le bozze rifiutate rimangono sul Watch. Le azioni oltre 30 giorni richiedono recupero manuale.
+Nessun account sanitario, backend, analytics o API a pagamento. I calcoli sono sul dispositivo. Nessuna nuova libreria esterna. L’esecuzione di Comandi Rapidi può richiedere il telefono sbloccato. Non è sincronizzazione continua o lettura diretta HealthKit. Il backup completo contiene ora anche dati sanitari leggibili: salvarlo o condividerlo è una scelta esplicita dell’utente. I vecchi backup privi di Salute conservano la sezione già presente durante il ripristino; un backup completo che la contiene la sostituisce. Le pagine/abitudini restano compatibili; documentazione journal in README-JOURNAL.md.
 
-Invio al Watch disattivato di default: attivarlo in Altro → Apple Watch. Viene inviato soltanto un riepilogo limitato di attività, abitudini e check-in, non l'intero diario. Il widget/complicazione apre la cattura rapida; non simula dati non disponibili. App Intent e comando rapido per aprire la cattura, assegnabile dall'utente al tasto Azione Ultra quando la companion è installata.
+## Relazione con Athlytic
 
-`project-watch.json` compila il pacchetto iPhone + Watch + complicazione. La firma e l'installazione sul Watch reale non sono dimostrate dalla build senza firma. Con Windows/Sideloadly e Apple ID gratuito non viene promessa l'installazione della companion: può essere necessario un passaggio su Mac con Xcode o una distribuzione con profili appropriati. Un account gratuito può fare test personali tramite Xcode; non si assume che una membership a pagamento sia sempre indispensabile.
+Ispirazione alle categorie pubbliche, con interfaccia, testi e formule indipendenti. Nessuna modifica di Athlytic, sblocco del suo PRO, uso dei suoi server o copia di algoritmi privati. La batteria/stress 24/7, sensori e GPS in tempo reale, battito dopo allenamento, allenamenti strutturati sul Watch, chat AI generativa, widget sanitari e firma/installazione Watch non sono resi equivalenti da questi importatori. Per questo la versione non viene presentata come replica integrale di ogni funzione PRO. L’app indica l’assenza dei dati necessari anziché simulare quei risultati.
 
-Percorso con app Apple già presenti: chiedere a Siri sul Watch di creare un promemoria in una lista personale, quindi importare quella lista dal journal su iPhone. L'importazione richiede il consenso iOS, importa solo elementi non completati, evita duplicati e non modifica gli originali. La sincronizzazione della lista tra Watch e iPhone dipende dalle impostazioni Apple dell'utente. Nessuna sincronizzazione in tempo reale con Promemoria viene simulata.
+## Metodi e fonti
 
-## Archivio, notifiche e installazione
+- Session-RPE: Foster et al., 2001: https://pubmed.ncbi.nlm.nih.gov/11708692/
+- Confronto HRV con baseline individuale: studio con lnRMSSD (non SDNN): https://www.mdpi.com/2411-5142/6/4/102
+- Limiti ACWR: https://pubmed.ncbi.nlm.nih.gov/32125672/
+- Azioni Trova campioni: https://support.apple.com/en-mt/guide/shortcuts/apd3c845e881/ios
+- Avvio di un comando salvato: https://support.apple.com/en-euro/guide/shortcuts/apd624386f42/10.0/ios/27
+- Funzioni pubbliche Athlytic: https://athlyticapp.helpscoutdocs.com/article/13-getting-started
 
-Archivio locale, senza account del journal o analytics. Backup completo JSON salvabile manualmente in File/iCloud Drive; nessuna sincronizzazione iCloud automatica del journal. Dimensione massima 90 MB. Pagine fino a 10.000, annotazioni rapide fino a 30.000. Per archivi con molte foto, esportare copie e liberare allegati non necessari.
-
-Notifiche di abitudini e journal condividono un budget di 60 richieste; priorità ai promemoria delle abitudini, poi al diario e alle prossime attività. iOS può ritardarle secondo Focus e altre impostazioni. Le notifiche del journal usano testo generico per non mostrare il contenuto personale.
-
-Il pacchetto Base è il candidato per l'installazione gratuita iPhone con Sideloadly e aggiorna l'app esistente, evitando un quarto slot. Il pacchetto Watch è separato e richiede verifica di firma. I progetti opzionali con widget/HealthKit/Screen Time dell'app precedente rimangono nei sorgenti; non sono inclusi nel pacchetto Base. Le capability devono essere autorizzate dai profili, non vengono simulate.
-
-## Fonti e verifica
-
-Realizzazione indipendente, con modelli e interfaccia originali. Riferimenti: [metodo Bullet Journal](https://bulletjournal.com/pages/migration), [setup pubblico AmandaRachLee](https://www.youtube.com/watch?v=erf7mDtZw9k), [modelli Day One](https://dayoneapp.com/guides/tips-and-tutorials/templates/), [umore Daylio](https://daylio.net/faq/docs/daylio-faq/tutorials/create-and-manage-moods/), [Diario Apple](https://support.apple.com/it-it/guide/iphone/iph9824e83ce/27/ios/27).
-
-Integrazioni: [WatchConnectivity](https://developer.apple.com/documentation/watchconnectivity), [Siri su Apple Watch](https://support.apple.com/it-it/guide/watch/apd60099a41a/27/watchos/27), [account Apple e Personal Team](https://developer.apple.com/help/account/basics/about-your-developer-account). Lo stato effettivo delle build e dei test è riportato in VERIFICA.json quando disponibile; nessun dato personale nei test CI.
-
-## Release verificata: 2.0 (9)
-
-[Build e test](https://github.com/AntoMorro/abitudini-locale-ios/actions/runs/42594077547) del commit `ea1844de83735ec4d6b73b4a5d5b1766b79c7a7a`: 33 test core superati, build Release iPhone riuscita, build con companion Watch e complicazione riuscita, un test completo UI superato sul simulatore iPhone 16 Pro con sette schermate esportate. I due IPA hanno superato il controllo ZIP CRC e il confronto SHA-256 degli artefatti scaricati. I 53 file sorgenti locali corrispondevano ai blob della build prima dell’aggiunta di questo rapporto.
-
-La firma/installazione sul telefono e sul Watch reali, la conservazione dell’archivio durante quell’aggiornamento, i permessi Foto/Microfono/Promemoria, la protezione Face ID e l’esportazione PDF con media sul dispositivo personale restano da provare. I test usano soltanto dati fittizi. Per aggiornare usare [INSTALLAZIONE.md](INSTALLAZIONE.md); i dettagli e gli hash sono in [VERIFICA.json](VERIFICA.json).
+Risultati effettivi di build e test in VERIFICA.json. Dati sintetici soltanto nei test; nessun valore sanitario personale pubblicato nel repository.

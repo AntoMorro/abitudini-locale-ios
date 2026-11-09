@@ -14,6 +14,13 @@ final class HabitRepository {
         defer { flock(descriptor, LOCK_UN) }
         return try body()
     }
+    private func writeProtected(_ data:Data,to url:URL)throws {
+        #if os(iOS)
+        try data.write(to:url,options:[.atomic,.completeFileProtection])
+        #else
+        try data.write(to:url,options:.atomic)
+        #endif
+    }
     private func readUnlocked() throws -> HabitDatabase {
         guard FileManager.default.fileExists(atPath: file.path) else { return HabitDatabase() }
         guard (try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) < 100_000_000 else { throw HabitError.invalid }
@@ -25,14 +32,14 @@ final class HabitRepository {
             var candidate = try readUnlocked(); try body(&candidate); _ = try candidate.validated()
             let data = try JSONEncoder().encode(candidate)
             guard data.count < 90_000_000 else { throw HabitError.invalid }
-            if FileManager.default.fileExists(atPath: file.path) { try Data(contentsOf: file).write(to: directory.appendingPathComponent("abitudini.previous.json"), options: .atomic) }
-            try data.write(to: file, options: .atomic); return candidate
+            if FileManager.default.fileExists(atPath: file.path) { try writeProtected(Data(contentsOf:file),to:directory.appendingPathComponent("abitudini.previous.json")) }
+            try writeProtected(data,to:file); return candidate
         }
     }
     func restore(_ data: Data) throws -> HabitDatabase {
         let candidate = try JSONDecoder().decode(HabitDatabase.self, from: data).validated()
         let encoded = try JSONEncoder().encode(candidate)
         guard encoded.count < 90_000_000 else { throw HabitError.invalid }
-        return try withLock { if FileManager.default.fileExists(atPath: file.path) { try Data(contentsOf: file).write(to: directory.appendingPathComponent("abitudini.previous.json"), options: .atomic) }; try JSONEncoder().encode(candidate).write(to: file, options: .atomic); return candidate }
+        return try withLock { if FileManager.default.fileExists(atPath: file.path) { try writeProtected(Data(contentsOf:file),to:directory.appendingPathComponent("abitudini.previous.json")) }; try writeProtected(JSONEncoder().encode(candidate),to:file); return candidate }
     }
 }

@@ -22,7 +22,7 @@ final class WellnessTests:XCTestCase {
     func testSleepOverlapStagesAndBedAreNotDoubled()throws{
         var a=WellnessArchive();let s=date(1,23),e=date(2,7)
         try a.merge([segment(s,e,.asleep),segment(s,e,.inBed),segment(date(2,1),date(2,3),.deep),segment(date(2,3),date(2,4),.awake)],now:date(30))
-        let n=WellnessAnalysis.sleep(a,on:date(2),calendar:cal);XCTAssertEqual(n.seconds,7*3600);XCTAssertEqual(n.phases["deep"],2*3600);XCTAssertEqual(n.efficiency!,87.5,accuracy:0.001);XCTAssertEqual(a.records.count,4)
+        let n=WellnessAnalysis.sleep(a,on:date(2),calendar:cal);XCTAssertEqual(n.seconds,7*3600);XCTAssertEqual(n.inBedSeconds,8*3600);XCTAssertFalse(n.timeline.isEmpty);XCTAssertEqual(n.phases["deep"],2*3600);XCTAssertEqual(n.efficiency!,87.5,accuracy:0.001);XCTAssertEqual(a.records.count,4)
     }
     func testSleepChoosesOneSourcePerNight()throws{
         var a=WellnessArchive();try a.merge([segment(date(1,23),date(2,7),.asleep),segment(date(1,22),date(2,7),.asleep,source:"Other")],now:date(30));XCTAssertEqual(WellnessAnalysis.sleep(a,on:date(2),calendar:cal).seconds,9*3600)
