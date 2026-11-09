@@ -23,10 +23,10 @@ enum WellnessPhase: String, Codable, CaseIterable, Identifiable {
     static func parse(_ text: String) throws -> Self {
         let s = text.folding(options:[.diacriticInsensitive,.caseInsensitive],locale:Locale(identifier:"it_IT")).trimmingCharacters(in:.whitespacesAndNewlines)
         if s == "0" || s == "inbed" || s.contains("a letto") || s == "in bed" { return .inBed }
-        if s == "2" || s.contains("svegl") || s == "awake" { return .awake }
-        if s == "4" || s.contains("profond") || s == "deep" || s == "asleep deep" { return .deep }
+        if s == "2" || s.contains("vegl") || s.contains("awake") { return .awake }
+        if s == "4" || s.contains("profond") || s.contains("deep") { return .deep }
         if s == "5" || s.contains("rem") { return .rem }
-        if s == "3" || s.contains("essenzial") || s.contains("legger") || s == "core" || s == "asleep core" { return .core }
+        if s == "3" || s.contains("essenzial") || s.contains("legger") || s.contains("core") { return .core }
         if ["1","asleep","asleepunspecified","asleep unspecified","addormentato","addormentato (non specificato)","sonno"].contains(s) { return .asleep }
         throw WellnessError.invalid("Fase sonno non riconosciuta: usa 0 a letto, 1 addormentato, 2 sveglio, 3 essenziale, 4 profondo o 5 REM.")
     }
@@ -119,9 +119,36 @@ struct WellnessWire: Codable {
     var externalID: String?
     var name: String?
     var rpe: Double?
+    var value64: String?
+    var unit64: String?
+    var source64: String?
+    var stage64: String?
 }
 struct WellnessEnvelope: Codable { var version: Int; var records: [WellnessWire] }
 enum WellnessImport {
+    static func text(_ encoded:String?) throws -> String? {
+        guard let encoded else{return nil}
+        guard encoded.count<=8000,let data=Data(base64Encoded:encoded,options:.ignoreUnknownCharacters),let text=String(data:data,encoding:.utf8) else{throw WellnessError.invalid("Testo del comando non valido: atteso Base64 UTF-8.")}
+        return text
+    }
+    static func unit(_ raw:String,type:WellnessMetric)throws->String {
+        let s=raw.lowercased().trimmingCharacters(in:.whitespacesAndNewlines).replacingOccurrences(of:" ",with:"")
+        if type == .hrv {
+            if ["ms","millisecond","milliseconds","millisecondo","millisecondi"].contains(s){return "ms"}
+            if ["s","sec","second","seconds","secondo","secondi"].contains(s){return "s"}
+        }
+        if [.rhr,.heart].contains(type) && ["bpm","count/min","count/minute","battiti/min","battiti/minuto","beats/min","beats/minute"].contains(s){return "bpm"}
+        return s
+    }
+    static func number(_ raw:String,unit expected:String,type:WellnessMetric)throws->Double {
+        let s=raw.trimmingCharacters(in:.whitespacesAndNewlines)
+        let pattern="^([+-]?[0-9]+(?:[.,][0-9]+)?(?:[eE][+-]?[0-9]+)?)\\s*(.*?)$"
+        let expression=try NSRegularExpression(pattern:pattern)
+        guard let match=expression.firstMatch(in:s,range:NSRange(s.startIndex...,in:s)),let numericRange=Range(match.range(at:1),in:s),let suffixRange=Range(match.range(at:2),in:s),let n=Double(s[numericRange].replacingOccurrences(of:",",with:".")),n.isFinite else{throw WellnessError.invalid("Il Valore del campione non è un numero leggibile. Il comando deve passare il dettaglio Valore, non l’intero campione.")}
+        let suffix=String(s[suffixRange])
+        if !suffix.isEmpty,try unit(suffix,type:type) != unit(expected,type:type){throw WellnessError.invalid("Unità nel valore e unità del campione diverse: controlla il comando.")}
+        return n
+    }
     static func date(_ text: String) throws -> Date {
         let f=ISO8601DateFormatter();f.formatOptions=[.withInternetDateTime,.withFractionalSeconds]
         if let d=f.date(from:text) { return d }; f.formatOptions=[.withInternetDateTime]
@@ -129,22 +156,28 @@ enum WellnessImport {
     }
     static func record(_ w: WellnessWire, now: Date = Date()) throws -> WellnessRecord {
         let start=try date(w.start), end=try w.end.map(date) ?? start
-        var value=w.value ?? 0
-        let u=(w.unit ?? w.type.unit).lowercased().replacingOccurrences(of:" ",with:"")
+        let unitText=try text(w.unit64) ?? w.unit ?? w.type.unit
+        var value=try text(w.value64).map{try number($0,unit:unitText,type:w.type)} ?? w.value ?? 0
+        let u=try unit(unitText,type:w.type)
         switch w.type {
         case .hrv: if ["s","sec"].contains(u) { value*=1000 } else if u != "ms" { throw WellnessError.invalid("HRV SDNN: usa ms o s; RMSSD non è intercambiabile con SDNN.") }
         case .rhr,.heart: guard ["bpm","count/min","battiti/min"].contains(u) else { throw WellnessError.invalid("Frequenza: unità bpm richiesta.") }
         case .sleep,.workout: value=end.timeIntervalSince(start)/60
         default: guard u==w.type.unit.lowercased().replacingOccurrences(of:" ",with:"") else { throw WellnessError.invalid("Unità richiesta: "+w.type.unit) }
         }
-        if w.type != .sleep && w.type != .workout && w.value == nil { throw WellnessError.invalid("Valore mancante.") }
-        let phase: WellnessPhase? = w.type == .sleep ? try WellnessPhase.parse(w.stage ?? "asleep") : nil
-        let r=WellnessRecord(metric:w.type,value:value,start:start,end:end,source:w.source ?? "Comandi Rapidi",phase:phase,externalID:w.externalID,name:w.name ?? "",rpe:w.rpe)
+        if w.type != .sleep && w.type != .workout && w.value == nil && w.value64 == nil { throw WellnessError.invalid("Valore mancante.") }
+        let stageText=try text(w.stage64) ?? w.stage ?? "asleep"
+        let phase: WellnessPhase? = w.type == .sleep ? try WellnessPhase.parse(stageText) : nil
+        let source=try text(w.source64) ?? w.source ?? "Comandi Rapidi"
+        let r=WellnessRecord(metric:w.type,value:value,start:start,end:end,source:source,phase:phase,externalID:w.externalID,name:w.name ?? "",rpe:w.rpe)
         try r.validate(now:now); return r
     }
     static func decode(_ data: Data, now: Date = Date()) throws -> [WellnessRecord] {
         guard data.count<=5_000_000 else { throw WellnessError.invalid("File troppo grande: massimo 5 MB.") }
-        let envelope=try JSONDecoder().decode(WellnessEnvelope.self,from:data)
+        let envelope:WellnessEnvelope
+        do{envelope=try JSONDecoder().decode(WellnessEnvelope.self,from:data)}catch{
+            throw WellnessError.invalid("JSON del comando non valido. Usa il comando preconfigurato: l’azione richiede un testo JSON con version e records, non una misura o una data come ingresso diretto.")
+        }
         guard envelope.version==1,!envelope.records.isEmpty,envelope.records.count<=10_000 else { throw WellnessError.invalid("Formato versione 1: servono da 1 a 10.000 campioni.") }
         return try envelope.records.map{try record($0,now:now)}
     }

@@ -1,33 +1,51 @@
-name: Check native Apple shortcut signing
+name: Build robust Shortcuts bridge
 on:
   push:
     branches: [salute-shortcut-files]
-    paths: ['.github/workflows/shortcut-files.yml', 'ShortcutFiles/**']
+    paths: ['Core/**', 'App/**', 'Tests/**', 'project*.json', '.github/workflows/shortcut-files.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  sign:
+  bridge:
     runs-on: macos-15-intel
-    timeout-minutes: 8
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare harmless local test shortcut
-        run: |
-          mkdir -p shortcut-build
-          python3 - <<'PY'
-          import plistlib,pathlib,uuid
-          data={'WFWorkflowName':'Prova Quaderno','WFWorkflowClientVersion':'3036.0.4.2','WFWorkflowMinimumClientVersion':900,'WFWorkflowIcon':{'WFWorkflowIconStartColor':4282601983,'WFWorkflowIconGlyphNumber':59511},'WFWorkflowTypes':[],'WFWorkflowInputContentItemClasses':[],'WFWorkflowActions':[{'WFWorkflowActionIdentifier':'is.workflow.actions.gettext','WFWorkflowActionParameters':{'UUID':str(uuid.uuid4()).upper(),'WFTextActionText':'Prova locale Quaderno. Nessun dato sanitario.'}},{'WFWorkflowActionIdentifier':'is.workflow.actions.showresult','WFWorkflowActionParameters':{}}]}
-          pathlib.Path('shortcut-build/unsigned.shortcut').write_bytes(plistlib.dumps(data))
-          PY
-      - name: Sign with Apple Shortcuts command
-        timeout-minutes: 3
+      - name: Core and shortcut codec tests
         run: |
           set -o pipefail
-          shortcuts sign --mode anyone --input shortcut-build/unsigned.shortcut --output shortcut-build/Prova-Quaderno.shortcut 2>&1 | tee shortcut-build/signing.log
+          swift test --parallel 2>&1 | tee shortcut-core-tests.log
+      - name: Install XcodeGen
+        run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+      - name: Generate base iPhone app
+        run: xcodegen generate --spec project.json
+      - name: Build app without HealthKit entitlement
+        run: |
+          set -o pipefail
+          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build/bridge CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-bridge.log
+      - name: Package iPhone update
+        run: |
+          mkdir -p build/package/Payload
+          cp -R build/bridge/Build/Products/Release-iphoneos/AbitudiniLocale.app build/package/Payload/
+          python3 - <<'PY'
+          import plistlib,pathlib
+          app=pathlib.Path('build/package/Payload/AbitudiniLocale.app')
+          p=plistlib.loads((app/'Info.plist').read_bytes())
+          assert p['CFBundleVersion']=='12' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
+          PY
+          cd build/package
+          zip -qry ../QuadernoSalute-v12-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuadernoSalute-v12-IPA
+          path: build/QuadernoSalute-v12-unsigned.ipa
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Shortcut-native-signing-check
-          path: shortcut-build
+          name: QuadernoSalute-v12-verification
+          path: |
+            shortcut-core-tests.log
+            build-bridge.log
           retention-days: 7
