@@ -1,0 +1,14 @@
+COMANDI SALUTE PER QUADERNO LOCALE 2.1 (12)
+
+1. Aggiorna prima l'app con QuadernoSalute-v12-unsigned.ipa usando stesso Apple ID e bundle ID. Non disinstallare l'app precedente; conserva un backup.
+2. Copia i cinque file .shortcut firmati sull'iPhone (per esempio con la tua cartella iCloud Drive). Aprili da File e scegli Aggiungi comando rapido. Non devi ricostruire le azioni o collegare campi.
+3. Esegui per primo Prova HRV Quaderno, a telefono sbloccato. Concedi personalmente la lettura di Salute. Importa al massimo un campione degli ultimi 28 giorni.
+4. Controlla nell'app Salute > Campioni, fonti ed esportazione. Ripeti la prova: lo stesso campione non deve duplicarsi.
+5. Esegui HRV nel quaderno, Riposo nel quaderno e Sonno nel quaderno per importare la storia disponibile degli ultimi 28 giorni. Il comando Aggiorna Salute Quaderno li richiama tutti, ma richiede prima l'importazione dei tre comandi con questi nomi esatti.
+6. I pulsanti nell'app Salute > Comandi Rapidi e sincronizzazione funzionano con questi tre nomi.
+
+I comandi non inviano dati a siti o server e non scrivono in Salute Apple. Sono stati firmati tramite il servizio gratuito Shortcuty; la firma ha ricevuto solo le istruzioni generiche e il riferimento all'app, non i tuoi valori sanitari. Le firme Apple e il contenuto dei comandi sono verificati separatamente. L'esecuzione dei comandi Salute reali va collaudata sul tuo iPhone.
+
+Le date sono formattate in ISO 8601; valori, unita', fonti e fasi viaggiano come testo Base64 per non corrompere virgole, caratteri speciali o virgolette. Base64 non e' cifratura: serve soltanto al formato di passaggio locale. Ogni comando invia un lotto unico all'app, evitando un salvataggio completo per ogni segmento.
+
+Se non ci sono campioni accessibili compare un avviso, senza salvare zeri. Se compare un errore, indica soltanto il testo e il nome dell'azione rossa; non inviare dati sanitari.
