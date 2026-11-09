@@ -41,7 +41,7 @@ extension HabitStore {
     }
     func importItems(_ values:[EKReminder],store:HabitStore)->Int {
         var count=0
-        _=store.journalChange{j in
+        let ok=store.journalChange{j in
             var seen=Set(j.bullets.compactMap(\.sourceReminderID))
             for r in values {
                 let id=r.calendar.source.sourceIdentifier+"|"+(r.calendarItemExternalIdentifier ?? r.calendarItemIdentifier)
@@ -50,6 +50,6 @@ extension HabitStore {
                 let date=r.dueDateComponents.flatMap{Calendar.current.date(from:$0)} ?? Date()
                 j.bullets.append(JournalBullet(text:title,date:date,kind:.task,sourceReminderID:id));count+=1
             }
-        };return count
+        };if !ok{error=store.problem;return 0};return count
     }
 }

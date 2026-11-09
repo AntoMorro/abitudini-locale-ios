@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   base:
-    name: Import engine tests and native iPhone app
+    name: Journal and habit tests with native iPhone build
     runs-on: macos-15-intel
     timeout-minutes: 30
     steps:
@@ -49,7 +49,7 @@ jobs:
             core-tests.log
           retention-days: 7
   ui:
-    name: Native study and service UI verification
+    name: Bullet journal and habit UI verification
     runs-on: macos-15-intel
     timeout-minutes: 40
     steps:

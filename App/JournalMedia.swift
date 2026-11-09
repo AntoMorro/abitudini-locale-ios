@@ -14,7 +14,7 @@ struct JournalClip:Equatable {var data:Data;var duration:Double}
     var elapsed:Double{min(120,Date().timeIntervalSince(started ?? Date()))}
     func start()async {
         guard !recording else{return}
-        let granted=await withCheckedContinuation{c in AVAudioSession.sharedInstance().requestRecordPermission{c.resume(returning:$0)}}
+        let granted=await withCheckedContinuation{c in AVAudioApplication.requestRecordPermission{c.resume(returning:$0)}}
         guard granted else{error="Abilita il microfono nelle impostazioni per registrare una nota vocale.";return}
         do{let session=AVAudioSession.sharedInstance();try session.setCategory(.playAndRecord,mode:.default,options:[.defaultToSpeaker]);try session.setActive(true)
             let file=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString+".m4a");self.file=file
@@ -63,10 +63,10 @@ struct JournalClip:Equatable {var data:Data;var duration:Double}
                 while rest.length>0 {
                     if y>740{newPage()}
                     let height=760-y;var low=1,high=rest.length,best=1
-                    while low<=high{let n=(low+high)/2;let slice=rest.substring(to:n) as NSString;let rect=slice.boundingRect(with:CGSize(width:507,height:.greatestFiniteMagnitude),options:[.usesLineFragmentOrigin,.usesFontLeading],attributes:attributes,context:nil);if rect.height<=height{best=n;low=n+1}else{high=n-1}}
+                    while low<=high{let n=(low+high)/2;let slice=rest.substring(to:n) as NSString;let rect=slice.boundingRect(with:CGSize(width:507,height:CGFloat.greatestFiniteMagnitude),options:[.usesLineFragmentOrigin,.usesFontLeading],attributes:attributes,context:nil);if rect.height<=height{best=n;low=n+1}else{high=n-1}}
                     // Respect UTF-16 composed sequences when a paragraph crosses a page.
                     let range=rest.rangeOfComposedCharacterSequences(for:NSRange(location:0,length:best));let chunk=rest.substring(with:range) as NSString
-                    let h=chunk.boundingRect(with:CGSize(width:507,height:.greatestFiniteMagnitude),options:[.usesLineFragmentOrigin,.usesFontLeading],attributes:attributes,context:nil).height
+                    let h=chunk.boundingRect(with:CGSize(width:507,height:CGFloat.greatestFiniteMagnitude),options:[.usesLineFragmentOrigin,.usesFontLeading],attributes:attributes,context:nil).height
                     chunk.draw(in:CGRect(x:44,y:y,width:507,height:h+3),withAttributes:attributes);y+=h+14;rest=rest.substring(from:range.length) as NSString;if rest.length>0{newPage()}
                 }
             }

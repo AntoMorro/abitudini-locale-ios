@@ -73,6 +73,7 @@ struct JournalPageEditor:View {
     @Environment(\.dismiss) private var dismiss
     @State var page:JournalPage
     @State private var tags=""
+    @State private var sleepText=""
     @State private var photoItems:[PhotosPickerItem]=[]
     @State private var importing=false
     @State private var drawing=false
@@ -84,7 +85,7 @@ struct JournalPageEditor:View {
         wellbeing
         media
     }.navigationTitle("Scrivi una pagina").navigationBarTitleDisplayMode(.inline).toolbar{ToolbarItem(placement:.cancellationAction){Button("Annulla"){voice.cancel();dismiss()}};ToolbarItem(placement:.confirmationAction){Button("Salva pagina"){save()}.disabled(importing || voice.recording)}}
-        .onAppear{tags=page.tags.joined(separator:", ")}.onDisappear{voice.cancel()}
+        .onAppear{tags=page.tags.joined(separator:", ");sleepText=page.sleep.map{String($0)} ?? ""}.onDisappear{voice.cancel()}
         .onChange(of:photoItems){_,items in Task{await importPhotos(items)}}
         .onChange(of:voice.clip){_,clip in if let clip=clip{page.audio=clip.data;page.audioDuration=clip.duration}}
         .sheet(isPresented:$drawing){JournalDrawing(data:page.ink){page.ink=$0}}
@@ -94,7 +95,7 @@ struct JournalPageEditor:View {
     private var wellbeing:some View {Section("Check-in facoltativo"){
         Picker("Umore",selection:Binding(get:{page.mood ?? 0},set:{page.mood=$0==0 ? nil:$0})){Text("Non indicato").tag(0);ForEach(1...5,id:\.self){Text(JournalUI.moods[$0-1]).tag($0)}}
         Picker("Energia",selection:Binding(get:{page.energy ?? 0},set:{page.energy=$0==0 ? nil:$0})){Text("Non indicata").tag(0);ForEach(1...5,id:\.self){Text("\($0)/5").tag($0)}}
-        TextField("Ore di sonno (facoltativo)",text:Binding(get:{page.sleep.map{String($0)} ?? ""},set:{page.sleep=Double($0.replacingOccurrences(of:",",with:"."))})).keyboardType(.decimalPad)
+        TextField("Ore di sonno (facoltativo)",text:$sleepText).keyboardType(.decimalPad)
         TextField("Luogo (inserimento manuale)",text:$page.place)
     }}
     private var media:some View {Section("Foto, voce e disegni"){
@@ -106,18 +107,18 @@ struct JournalPageEditor:View {
         if page.audio != nil{Label("Registrazione allegata",systemImage:"waveform");Button("Rimuovi audio",role:.destructive){page.audio=nil;page.audioDuration=nil}}
         Text("Massimo 4 foto ridimensionate e 120 secondi di audio per pagina. Gli allegati sono inclusi nel backup.").font(.caption).foregroundStyle(.secondary)
     }}
-    func save(){page.tags=tags.split(separator:",").map{$0.trimmingCharacters(in:.whitespacesAndNewlines)};if store.savePage(page){dismiss()}else{error=store.problem}}
+    func save(){if !sleepText.isEmpty{guard let hours=Double(sleepText.replacingOccurrences(of:",",with:".")),(0...24).contains(hours) else{error="Inserisci ore di sonno tra 0 e 24.";return};page.sleep=hours}else{page.sleep=nil};page.tags=tags.split(separator:",").map{$0.trimmingCharacters(in:.whitespacesAndNewlines)};if store.savePage(page){dismiss()}else{error=store.problem}}
     @MainActor func importPhotos(_ items:[PhotosPickerItem])async {guard !items.isEmpty else{return};importing=true;defer{importing=false;photoItems=[]};do{for item in items.prefix(max(0,4-page.photos.count)){guard let data=try await item.loadTransferable(type:Data.self),let source=CGImageSourceCreateWithData(data as CFData,nil),let thumb=CGImageSourceCreateThumbnailAtIndex(source,0,[kCGImageSourceCreateThumbnailFromImageAlways:true,kCGImageSourceThumbnailMaxPixelSize:1600,kCGImageSourceCreateThumbnailWithTransform:true] as CFDictionary),let jpeg=UIImage(cgImage:thumb).jpegData(compressionQuality:0.65),jpeg.count<=1_000_000 else{throw HabitError.invalid};page.photos.append(JournalPhoto(data:jpeg))}}catch{self.error="Foto non importata: "+error.localizedDescription}}
     func finishVoice(){if let result=voice.finish(){page.audio=result.0;page.audioDuration=result.1}}
 }
 struct JournalCanvas:UIViewRepresentable {
     var canvas:PKCanvasView
-    func makeUIView(context:Context)->PKCanvasView{canvas.drawingPolicy = .anyInput;canvas.tool=PKInkingTool(.pen,color:.label,width:3);canvas.backgroundColor = .clear;return canvas}
+    func makeUIView(context:Context)->PKCanvasView{canvas.drawingPolicy = .anyInput;canvas.tool=PKInkingTool(.pen,color:.systemTeal,width:3);canvas.backgroundColor = .clear;return canvas}
     func updateUIView(_ view:PKCanvasView,context:Context){}
 }
 struct JournalDrawing:View {
     @Environment(\.dismiss) private var dismiss
     var data:Data?;var save:(Data)->Void
     @State private var canvas=PKCanvasView()
-    var body:some View {NavigationStack{JournalCanvas(canvas:canvas).background{JournalPaper()}.navigationTitle("Spazio per disegnare").toolbar{ToolbarItem(placement:.cancellationAction){Button("Annulla"){dismiss()}};ToolbarItemGroup(placement:.bottomBar){Button("Penna"){canvas.tool=PKInkingTool(.pen,color:.label,width:3)};Button("Evidenziatore"){canvas.tool=PKInkingTool(.marker,color:.systemMint,width:16)};Button("Gomma"){canvas.tool=PKEraserTool(.bitmap)}};ToolbarItem(placement:.confirmationAction){Button("Salva disegno"){save(canvas.drawing.dataRepresentation());dismiss()}}}.onAppear{if let data=data,let drawing=try? PKDrawing(data:data){canvas.drawing=drawing}}}}
+    var body:some View {NavigationStack{JournalCanvas(canvas:canvas).background{JournalPaper()}.navigationTitle("Spazio per disegnare").toolbar{ToolbarItem(placement:.cancellationAction){Button("Annulla"){dismiss()}};ToolbarItemGroup(placement:.bottomBar){Button("Penna"){canvas.tool=PKInkingTool(.pen,color:.systemTeal,width:3)};Button("Evidenziatore"){canvas.tool=PKInkingTool(.marker,color:.systemMint,width:16)};Button("Gomma"){canvas.tool=PKEraserTool(.bitmap)}};ToolbarItem(placement:.confirmationAction){Button("Salva disegno"){save(canvas.drawing.dataRepresentation());dismiss()}}}.onAppear{if let data=data,let drawing=try? PKDrawing(data:data){canvas.drawing=drawing}}}}
 }

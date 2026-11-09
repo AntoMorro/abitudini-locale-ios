@@ -31,7 +31,8 @@ struct JournalReview:View {
         Text("Fermati. Rileggi. Scegli.").font(.system(.title,design:.serif,weight:.semibold))
         HStack{metric("Pagine",value:"\(recent.count)");Spacer();metric("Giorni di scrittura",value:"\(Set(recent.map{JournalEngine.day($0.date)}).count)");Spacer();metric("Umore medio",value:mood.isEmpty ? "—":mean.formatted(.number.precision(.fractionLength(1))))}
         if !mood.isEmpty{Chart(mood){p in PointMark(x:.value("Data",p.date),y:.value("Umore",p.mood!)).foregroundStyle(.mint)}.chartYScale(domain:1...5).frame(height:170).accessibilityLabel("Umore registrato negli ultimi 30 giorni")}
-        Text("Ultimi 30 giorni. Sono le tue registrazioni personali, non una valutazione medica o una relazione causale tra umore e abitudini.").font(.caption).foregroundStyle(.secondary)
+        JournalPixelYear()
+        Text("Ultimi 30 giorni nel grafico; i giorni senza check-in non hanno un valore assegnato.").font(.caption).foregroundStyle(.secondary)
         ForEach(["settimana","mese"],id:\.self){id in if let t=JournalTemplate.all.first(where:{$0.id==id}){Button(t.title){draft=JournalPage(title:t.title,body:t.body,template:t.id)}.buttonStyle(.bordered)}}
         Text("Attività aperte").font(.headline);Text("\(store.journal.bullets.filter{$0.kind == .task && $0.status == .open}.count) da rivedere. Usa Agenda → Rivedi attività precedenti per una migrazione consapevole.")
         Text("Abitudini e diario").font(.headline);Text("I check-in e il tracker sono nello stesso archivio. Una giornata senza registrazioni non viene trattata come completata.").foregroundStyle(.secondary)
