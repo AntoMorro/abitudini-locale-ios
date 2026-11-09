@@ -17,7 +17,7 @@ enum WellnessMetric: String, Codable, CaseIterable, Identifiable {
 enum WellnessPhase: String, Codable, CaseIterable, Identifiable {
     case inBed, asleep, awake, core, deep, rem
     var id: String { rawValue }
-    var title: String { switch self {case .inBed:return "A letto";case .asleep:return "Addormentato";case .awake:return "Sveglio";case .core:return "Essenziale";case .deep:return "Profondo";case .rem:return "REM"} }
+    var title: String { switch self {case .inBed:return "A letto";case .asleep:return "Addormentato";case .awake:return "Sveglio";case .core:return "Principale";case .deep:return "Profondo";case .rem:return "REM"} }
     var rank: Int { switch self {case .inBed:return 0;case .asleep:return 1;case .core:return 2;case .rem:return 3;case .deep:return 4;case .awake:return 5} }
     var sleeping: Bool { ![.inBed,.awake].contains(self) }
     static func parse(_ text: String) throws -> Self {
@@ -26,12 +26,12 @@ enum WellnessPhase: String, Codable, CaseIterable, Identifiable {
         if s == "2" || s.contains("vegl") || s.contains("awake") { return .awake }
         if s == "4" || s.contains("profond") || s.contains("deep") { return .deep }
         if s == "5" || s.contains("rem") { return .rem }
-        if s == "3" || s.contains("essenzial") || s.contains("legger") || s.contains("core") { return .core }
+        if s == "3" || s.contains("essenzial") || s.contains("principal") || s.contains("legger") || s.contains("core") { return .core }
         if ["1","asleep","asleepunspecified","asleep unspecified","asleep (unspecified)","addormentato","addormentato (non specificato)","addormentato non specificato","sonno","in sonno","in sonno (non specificato)","sonno (non specificato)","sonno non specificato"].contains(s) { return .asleep }
         // Report only a short alphabetic category label, never a raw quantity, duration or JSON.
         let allowed=CharacterSet.letters.union(.whitespaces).union(CharacterSet(charactersIn:"()’-"))
         let label = !s.isEmpty && s.count<=80 && s.unicodeScalars.allSatisfy({allowed.contains($0)}) ? "Etichetta non riconosciuta: «\(s)»." : s.isEmpty ? "La fase ricevuta è vuota." : "Il campo fase non contiene un’etichetta riconoscibile."
-        throw WellnessError.invalid(label+" Usa 0 a letto, 1 addormentato, 2 sveglio, 3 essenziale, 4 profondo o 5 REM. Nessun campione del lotto è salvato.")
+        throw WellnessError.invalid(label+" Usa 0 a letto, 1 addormentato, 2 sveglio, 3 principale (essenziale), 4 profondo o 5 REM. Nessun campione del lotto è salvato.")
     }
 }
 struct WellnessRecord: Codable, Identifiable, Equatable {

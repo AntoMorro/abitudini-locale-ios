@@ -13,7 +13,7 @@
       "TARGETED_DEVICE_FAMILY": "1,2",
       "IPHONEOS_DEPLOYMENT_TARGET": "18.0",
       "MARKETING_VERSION": "2.2",
-      "CURRENT_PROJECT_VERSION": "14",
+      "CURRENT_PROJECT_VERSION": "15",
       "CODE_SIGN_STYLE": "Automatic",
       "SWIFT_STRICT_CONCURRENCY": "minimal"
     }
@@ -43,7 +43,7 @@
             "it"
           ],
           "CFBundleShortVersionString": "2.2",
-          "CFBundleVersion": "14",
+          "CFBundleVersion": "15",
           "UILaunchScreen": {},
           "UISupportedInterfaceOrientations": [
             "UIInterfaceOrientationPortrait",

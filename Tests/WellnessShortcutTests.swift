@@ -45,4 +45,14 @@ final class WellnessShortcutTests:XCTestCase {
         let data=try JSONEncoder().encode(WellnessEnvelope(version:1,records:records));var a=WellnessArchive()
         XCTAssertThrowsError(try a.merge(WellnessImport.decode(data)));XCTAssertTrue(a.records.isEmpty)
     }
+    func testPrincipalPhaseEncodedBatchKeepsCoreAndDeduplicates()throws{
+        let wire=WellnessWire(type:.sleep,start:"2026-01-01T01:00:00+01:00",end:"2026-01-01T01:10:00+01:00",source:"Apple Watch",stage64:base64("principale"))
+        let records=try WellnessImport.decode(JSONEncoder().encode(WellnessEnvelope(version:1,records:[wire])))
+        var a=WellnessArchive();try a.merge(records);try a.merge(records)
+        XCTAssertEqual(a.records.count,1);XCTAssertEqual(a.records.first?.phase,.core)
+        XCTAssertEqual(a.records.first?.phase?.title,"Principale")
+        let night=WellnessAnalysis.sleep(a,on:records[0].end)
+        XCTAssertEqual(night.phases[WellnessPhase.core.rawValue] ?? 0,600,accuracy:0.01)
+        XCTAssertNil(night.phases[WellnessPhase.asleep.rawValue])
+    }
 }
