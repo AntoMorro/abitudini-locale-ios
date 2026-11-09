@@ -1,0 +1,66 @@
+name: HealthKit read-only device probe
+on:
+  workflow_dispatch:
+  push:
+    branches: [healthkit-probe]
+    paths:
+      - 'App/**'
+      - 'Core/**'
+      - 'Shared/**'
+      - 'project*.json'
+      - '.github/workflows/health-probe.yml'
+permissions:
+  contents: read
+concurrency:
+  group: healthkit-probe
+  cancel-in-progress: true
+jobs:
+  probe:
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+      - name: Generate HealthKit-only project
+        run: xcodegen generate --spec project-healthprobe.json
+      - name: Build device app
+        run: |
+          set -o pipefail
+          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build/probe CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-healthprobe.log
+      - name: Preserve HealthKit in ad hoc signature and inspect package
+        run: |
+          mkdir -p build/probe-package/Payload
+          cp -R build/probe/Build/Products/Release-iphoneos/AbitudiniLocale.app build/probe-package/Payload/
+          APP=build/probe-package/Payload/AbitudiniLocale.app
+          codesign --force --sign - --entitlements Generated/HealthProbe.entitlements --generate-entitlement-der "$APP"
+          codesign --verify --deep --strict "$APP"
+          codesign -d --entitlements :- "$APP" > build/healthprobe-entitlements.plist 2> build/healthprobe-signature.log
+          python3 - <<'PY'
+          import plistlib,pathlib
+          app=pathlib.Path('build/probe-package/Payload/AbitudiniLocale.app')
+          info=plistlib.loads((app/'Info.plist').read_bytes())
+          e=plistlib.loads(pathlib.Path('build/healthprobe-entitlements.plist').read_bytes())
+          assert info['CFBundleIdentifier']=='local.abitudinilocale.habits'
+          assert info['CFBundleVersion']=='10'
+          assert e.get('com.apple.developer.healthkit') is True
+          assert not e.get('com.apple.developer.family-controls')
+          assert not (app/'PlugIns').exists() and not (app/'Watch').exists()
+          print('Version 2.0 (10), HealthKit entitlement retained; ad hoc signature is not an Apple device provisioning profile.')
+          PY
+          cd build/probe-package
+          zip -qry ../QuadernoLocale-Salute-da-firmare.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuadernoLocale-HealthKit-Prova-IPA
+          path: build/QuadernoLocale-Salute-da-firmare.ipa
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: HealthKit-probe-build-verification
+          path: |
+            build-healthprobe.log
+            build/healthprobe-entitlements.plist
+            build/healthprobe-signature.log
+          retention-days: 7

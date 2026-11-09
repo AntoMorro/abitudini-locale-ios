@@ -10,6 +10,9 @@ struct JournalMore:View {
     var body:some View {NavigationStack{List{
         Section("Il tuo quaderno"){NavigationLink("Modelli e raccolte"){JournalTemplates()};NavigationLink("Indice delle pagine"){JournalIndex()};Button("Nuovo quaderno"){newBook=true};NavigationLink("Revisioni e andamento"){JournalReview()};NavigationLink("In questo giorno"){JournalMemories()}}
         Section("Connessioni"){NavigationLink("Apple Watch e cattura rapida"){JournalWatchSetup()};NavigationLink("Importa da Promemoria"){JournalRemindersImport()}}
+        #if HEALTH_PROBE
+        Section("Prova sul dispositivo"){NavigationLink("Prova lettura Salute"){JournalHealthProbe()}}
+        #endif
         Section("Personalizza e conserva"){NavigationLink("Preferenze, privacy ed esportazione"){JournalPreferencesView()};Button("Statistiche abitudini"){habitsStats=true};Button("Impostazioni e backup completo"){habitsSettings=true}}
     }.navigationTitle("Il tuo spazio").sheet(isPresented:$newBook){JournalBookEditor(book:JournalBook(title:""))}.sheet(isPresented:$habitsSettings){HabitSettings()}.sheet(isPresented:$habitsStats){TrackerOverview()}}}
 }

@@ -1,0 +1,31 @@
+{
+  "include": [
+    "project.json"
+  ],
+  "settings": {
+    "base": {
+      "CURRENT_PROJECT_VERSION": "10"
+    }
+  },
+  "targets": {
+    "AbitudiniLocale": {
+      "settings": {
+        "base": {
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) HEALTH_PROBE"
+        }
+      },
+      "entitlements": {
+        "path": "Generated/HealthProbe.entitlements",
+        "properties": {
+          "com.apple.developer.healthkit": true
+        }
+      },
+      "info": {
+        "properties": {
+          "CFBundleVersion": "10",
+          "NSHealthShareUsageDescription": "Legge frequenza cardiaca, variabilit\u00e0 cardiaca, frequenza a riposo, sonno, allenamenti ed energia attiva per verificare il collegamento locale a Salute."
+        }
+      }
+    }
+  }
+}
