@@ -1,0 +1,33 @@
+name: Check native Apple shortcut signing
+on:
+  push:
+    branches: [salute-shortcut-files]
+    paths: ['.github/workflows/shortcut-files.yml', 'ShortcutFiles/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sign:
+    runs-on: macos-15-intel
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare harmless local test shortcut
+        run: |
+          mkdir -p shortcut-build
+          python3 - <<'PY'
+          import plistlib,pathlib,uuid
+          data={'WFWorkflowName':'Prova Quaderno','WFWorkflowClientVersion':'3036.0.4.2','WFWorkflowMinimumClientVersion':900,'WFWorkflowIcon':{'WFWorkflowIconStartColor':4282601983,'WFWorkflowIconGlyphNumber':59511},'WFWorkflowTypes':[],'WFWorkflowInputContentItemClasses':[],'WFWorkflowActions':[{'WFWorkflowActionIdentifier':'is.workflow.actions.gettext','WFWorkflowActionParameters':{'UUID':str(uuid.uuid4()).upper(),'WFTextActionText':'Prova locale Quaderno. Nessun dato sanitario.'}},{'WFWorkflowActionIdentifier':'is.workflow.actions.showresult','WFWorkflowActionParameters':{}}]}
+          pathlib.Path('shortcut-build/unsigned.shortcut').write_bytes(plistlib.dumps(data))
+          PY
+      - name: Sign with Apple Shortcuts command
+        timeout-minutes: 3
+        run: |
+          set -o pipefail
+          shortcuts sign --mode anyone --input shortcut-build/unsigned.shortcut --output shortcut-build/Prova-Quaderno.shortcut 2>&1 | tee shortcut-build/signing.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Shortcut-native-signing-check
+          path: shortcut-build
+          retention-days: 7
