@@ -39,7 +39,13 @@
       },
       "info": {
         "properties": {
-          "NSHealthShareUsageDescription": "Legge passi, allenamenti e minuti di meditazione per le abitudini scelte."
+          "NSHealthShareUsageDescription": "Legge passi, allenamenti e minuti di meditazione per le abitudini scelte.",
+          "CFBundleShortVersionString": "2.0",
+          "CFBundleVersion": "8",
+          "CFBundleDisplayName": "Quaderno Locale",
+          "NSMicrophoneUsageDescription": "Registra una nota vocale da allegare alla tua pagina.",
+          "NSFaceIDUsageDescription": "Proteggi il tuo quaderno personale con Face ID.",
+          "NSRemindersFullAccessUsageDescription": "Importa nel journal i promemoria della lista che scegli, anche quelli creati con Siri su Apple Watch."
         }
       }
     },
@@ -69,7 +75,9 @@
             "NSExtensionPointIdentifier": "com.apple.deviceactivity.monitor-extension",
             "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitMonitor"
           },
-          "HabitAppGroup": "$(APP_GROUP)"
+          "HabitAppGroup": "$(APP_GROUP)",
+          "CFBundleShortVersionString": "2.0",
+          "CFBundleVersion": "8"
         }
       },
       "entitlements": {
@@ -104,7 +112,9 @@
           "NSExtension": {
             "NSExtensionPointIdentifier": "com.apple.ManagedSettingsUI.shield-configuration-service",
             "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitShield"
-          }
+          },
+          "CFBundleShortVersionString": "2.0",
+          "CFBundleVersion": "8"
         }
       },
       "entitlements": {
@@ -136,7 +146,9 @@
           "NSExtension": {
             "NSExtensionPointIdentifier": "com.apple.ManagedSettings.shield-action-service",
             "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitShieldAction"
-          }
+          },
+          "CFBundleShortVersionString": "2.0",
+          "CFBundleVersion": "8"
         }
       },
       "entitlements": {
@@ -167,7 +179,9 @@
           "CFBundleDisplayName": "Abitudini Locale",
           "NSExtension": {
             "NSExtensionPointIdentifier": "com.apple.deviceactivityui.report-extension"
-          }
+          },
+          "CFBundleShortVersionString": "2.0",
+          "CFBundleVersion": "8"
         }
       },
       "entitlements": {
@@ -176,6 +190,12 @@
           "com.apple.developer.family-controls": true
         }
       }
+    }
+  },
+  "settings": {
+    "base": {
+      "MARKETING_VERSION": "2.0",
+      "CURRENT_PROJECT_VERSION": "8"
     }
   }
 }

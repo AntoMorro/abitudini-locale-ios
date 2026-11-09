@@ -4,7 +4,9 @@
   ],
   "settings": {
     "base": {
-      "APP_GROUP": "group.local.abitudinilocale.shared"
+      "APP_GROUP": "group.local.abitudinilocale.shared",
+      "MARKETING_VERSION": "2.0",
+      "CURRENT_PROJECT_VERSION": "8"
     }
   },
   "targets": {
@@ -31,7 +33,13 @@
       "info": {
         "properties": {
           "HabitAppGroup": "$(APP_GROUP)",
-          "NSSupportsLiveActivities": true
+          "NSSupportsLiveActivities": true,
+          "CFBundleShortVersionString": "2.0",
+          "CFBundleVersion": "8",
+          "CFBundleDisplayName": "Quaderno Locale",
+          "NSMicrophoneUsageDescription": "Registra una nota vocale da allegare alla tua pagina.",
+          "NSFaceIDUsageDescription": "Proteggi il tuo quaderno personale con Face ID.",
+          "NSRemindersFullAccessUsageDescription": "Importa nel journal i promemoria della lista che scegli, anche quelli creati con Siri su Apple Watch."
         }
       }
     },
@@ -62,7 +70,9 @@
           "NSExtension": {
             "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
           },
-          "HabitAppGroup": "$(APP_GROUP)"
+          "HabitAppGroup": "$(APP_GROUP)",
+          "CFBundleShortVersionString": "2.0",
+          "CFBundleVersion": "8"
         }
       },
       "entitlements": {

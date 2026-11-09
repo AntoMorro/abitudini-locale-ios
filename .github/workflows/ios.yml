@@ -1,82 +1,55 @@
-name: Build Abitudini Locale
+name: Build Quaderno Locale
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths-ignore: ['**.md', 'ANALISI.json', 'VERIFICA.json']
+    paths-ignore: ['**.md', 'VERIFICA.json']
 permissions:
   contents: read
 concurrency:
-  group: habits-${{ contains(github.event.head_commit.message, '[probe-only]') && 'probe' || 'release' }}-${{ github.ref }}
+  group: quaderno-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   base:
-    if: ${{ !contains(github.event.head_commit.message, '[ui-only]') && !contains(github.event.head_commit.message, '[probe-only]') }}
-    name: Habit engine and base iPhone app
-    runs-on: macos-15-intel
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v4
-      - name: Habit engine tests
-        run: swift test --parallel
-      - name: Install XcodeGen
-        run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
-      - name: Generate base project
-        run: xcodegen generate --spec project.json
-      - name: Build base iPhone app
-        run: |
-          set -o pipefail
-          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/base CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-base.log
-      - name: Package base IPA
-        run: bash scripts/package.sh base Base
-      - uses: actions/upload-artifact@v4
-        with:
-          name: AbitudiniLocale-Base-IPA
-          path: build/AbitudiniLocale-Base-unsigned.ipa
-          retention-days: 14
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: AbitudiniLocale-base-logs
-          path: build-base.log
-          retention-days: 7
-  extensions:
-    if: ${{ !contains(github.event.head_commit.message, '[ui-only]') && !contains(github.event.head_commit.message, '[probe-only]') }}
-    name: Widgets Health and Screen Time extensions
+    name: Import engine tests and native iPhone app
     runs-on: macos-15-intel
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Core tests with fictional backups
+        run: |
+          set -o pipefail
+          swiftc -frontend -parse App/*.swift Core/*.swift Shared/*.swift
+          swift test --parallel 2>&1 | tee core-tests.log
       - name: Install XcodeGen
         run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
-      - name: Build widget package
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.json
+      - name: Build native iPhone app
         run: |
-          xcodegen generate --spec project-widgets.json
           set -o pipefail
-          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/widgets CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-widgets.log
-          bash scripts/package.sh widgets Widgets
-      - name: Build full Screen Time package
+          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/base CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-base.log
+      - name: Package unsigned IPA
         run: |
-          xcodegen generate --spec project-full.json
-          set -o pipefail
-          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/full CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-full.log
-          bash scripts/package.sh full Completa
+          mkdir -p build/Payload
+          cp -R build/base/Build/Products/Release-iphoneos/AbitudiniLocale.app build/Payload/
+          cd build
+          zip -qry QuadernoLocale-Base-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: AbitudiniLocale-Extensions-IPA
-          path: |
-            build/AbitudiniLocale-Widgets-unsigned.ipa
-            build/AbitudiniLocale-Completa-unsigned.ipa
+          name: QuadernoLocale-Base-IPA
+          path: build/QuadernoLocale-Base-unsigned.ipa
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: AbitudiniLocale-extension-logs
-          path: build-*.log
+          name: AbitudiniLocale-build-logs
+          path: |
+            build-base.log
+            core-tests.log
           retention-days: 7
   ui:
-    if: ${{ !contains(github.event.head_commit.message, '[probe-only]') }}
-    name: iPhone habit and rule UI verification
+    name: Native study and service UI verification
     runs-on: macos-15-intel
     timeout-minutes: 40
     steps:
@@ -88,6 +61,11 @@ jobs:
         run: |
           xcodegen generate --spec project.json
           python3 scripts/select_simulator.py >> "$GITHUB_ENV"
+      - name: Compile native app and UI tests
+        timeout-minutes: 12
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator CODE_SIGNING_ALLOWED=NO | tee build-ui-compile.log
       - name: Boot simulator before UI test
         timeout-minutes: 8
         run: |
@@ -97,7 +75,7 @@ jobs:
         timeout-minutes: 15
         run: |
           set -o pipefail
-          xcodebuild test -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult CODE_SIGNING_ALLOWED=NO | tee build-ui.log
+          xcodebuild test-without-building -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult CODE_SIGNING_ALLOWED=NO | tee build-ui.log
       - name: Export test screenshots
         if: ${{ !cancelled() }}
         run: |
@@ -123,38 +101,37 @@ jobs:
           path: |
             build/screenshots
             build-ui.log
+            build-ui-compile.log
             build/diagnostics
           retention-days: 7
-  render:
-    if: ${{ contains(github.event.head_commit.message, '[probe-only]') }}
-    name: Direct native detail rendering
+  watch:
+    name: Native Watch companion and capture complication
     runs-on: macos-15-intel
-    timeout-minutes: 35
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Install XcodeGen
         run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
-      - name: Generate and select simulator
-        timeout-minutes: 8
-        run: |
-          xcodegen generate --spec project.json
-          python3 scripts/select_simulator.py >> "$GITHUB_ENV"
-      - name: Boot simulator
-        timeout-minutes: 8
-        run: xcrun simctl bootstatus "$SIMULATOR_ID" -b
-      - name: Compile debug app
-        timeout-minutes: 10
+      - name: Generate Watch project
+        run: xcodegen generate --spec project-watch.json
+      - name: Compile paired iPhone and Watch bundle
         run: |
           set -o pipefail
-          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -sdk iphonesimulator -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath build/probe CODE_SIGNING_ALLOWED=NO | tee build-render.log
-      - name: Launch and verify detail
-        timeout-minutes: 2
-        run: python3 scripts/render_probe.py
+          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build/watch CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-watch.log
+      - name: Package companion IPA
+        run: |
+          mkdir -p build/watch-package/Payload
+          cp -R build/watch/Build/Products/Release-iphoneos/AbitudiniLocale.app build/watch-package/Payload/
+          cd build/watch-package
+          zip -qry ../QuadernoLocale-Watch-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuadernoLocale-Watch-IPA
+          path: build/QuadernoLocale-Watch-unsigned.ipa
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: AbitudiniLocale-direct-render
-          path: |
-            build/render-probe
-            build-render.log
+          name: QuadernoLocale-Watch-logs
+          path: build-watch.log
           retention-days: 7

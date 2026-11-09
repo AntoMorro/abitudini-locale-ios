@@ -21,16 +21,16 @@ struct HabitRoot: View {
             #endif
         }
         .alert("Abitudini Locale", isPresented: Binding(get: { store.problem != nil }, set: { if !$0 { store.problem = nil } })) { Button("OK") { store.problem = nil } } message: { Text(store.problem ?? "") }
-        .onChange(of: phase) { _, next in if next == .active { store.refresh(); store.syncReminders(); Task { await store.refreshHealth() } } else if next == .inactive { store.background() } }
+        .onChange(of: phase) { _, next in JournalPrivacy.shared.update(enabled:store.journal.preferences.lock,active:next == .active); if next == .active { store.refresh(); store.syncReminders(); Task { await store.refreshHealth() } } else if next == .inactive { store.background() } }
         .onReceive(NotificationCenter.default.publisher(for: .habitDataChanged)) { _ in store.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in store.refresh() }
         .onOpenURL { url in if let id = UUID(uuidString: url.lastPathComponent), let h = store.db.habits.first(where: { $0.id == id }) { store.routeHabit = h } }
         .sheet(item: $store.routeHabit) { HabitEditor(habit: $0) }
-        .task { store.syncReminders() }
+        .task { store.syncReminders(); JournalPhoneBridge.shared.start(store); JournalPrivacy.shared.update(enabled:store.journal.preferences.lock,active:true) }
     }
     @ViewBuilder var standardRoot: some View {
             if !store.db.onboarded && !store.readOnly { HabitWelcome() }
-            else { TabView { HabitBoard().tabItem { Label("Abitudini", systemImage: "square.grid.3x3.fill") }; TrackerOverview().tabItem { Label("Statistiche", systemImage: "chart.bar.xaxis") }; HabitSettings().tabItem { Label("Impostazioni", systemImage: "gearshape") } } }
+            else { JournalTabs() }
     }
 }
 struct HabitWelcome: View {

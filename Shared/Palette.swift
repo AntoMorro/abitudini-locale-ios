@@ -6,7 +6,7 @@ enum HabitPalette {
 }
 extension String {
     var paletteColor: Color {
-        guard hasPrefix("#"), let hex = UInt32(dropFirst(), radix: 16) else { switch self { case "cyan": return .cyan; case "blue": return .blue; case "orange": return .orange; case "pink": return .pink; case "purple": return .purple; default: return .mint } }
+        guard hasPrefix("#"), let hex = UInt32(dropFirst(), radix: 16) else { switch self { case "cyan": return .cyan; case "blue": return .blue; case "orange": return .orange; case "pink": return .pink; case "purple": return .purple; case "indigo": return .indigo; default: return .mint } }
         return Color(red: Double((hex >> 16)&255)/255, green: Double((hex >> 8)&255)/255, blue: Double(hex&255)/255)
     }
 }

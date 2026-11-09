@@ -36,6 +36,7 @@ import FamilyControls
         do { db = try repository.read(); readOnly = false }
         catch { readOnly = true; problem = "Archivio non leggibile. L’originale è conservato e i salvataggi sono sospesi: ripristina un backup. \(error.localizedDescription)" }
         if !readOnly { do { try configureProtection(); applyProtection() } catch { protectionStatus = error.localizedDescription; protectionReady = false } }
+        JournalPhoneBridge.shared.publish(db)
     }
     @discardableResult func change(_ body: (inout HabitDatabase) throws -> Void, configure: Bool = false) -> Bool {
         guard !readOnly else { problem = "Ripristina un backup prima di modificare l’archivio."; return false }
@@ -47,7 +48,7 @@ import FamilyControls
             }
             if previousTimer != nil && db.timer == nil { LiveTimer.end() }
             if configure { try configureProtection() }
-            applyProtection(); WidgetCenter.shared.reloadAllTimelines(); syncReminders(); return true
+            applyProtection(); WidgetCenter.shared.reloadAllTimelines(); syncReminders(); JournalPhoneBridge.shared.publish(db); return true
         } catch { problem = error.localizedDescription; return false }
     }
     func applyProtection() {
@@ -98,7 +99,7 @@ import FamilyControls
     func add(_ habit: Habit, amount: Int = 1) { change { try HabitEngine.add(habit.id, amount: amount, db: &$0, now: Date()) } }
     func syncReminders() {
         reminderTask?.cancel()
-        reminderTask = Task { try? await Task.sleep(for: .milliseconds(350)); guard !Task.isCancelled else { return }; let status = await HabitReminders.sync(db); if !Task.isCancelled { reminderStatus = status } }
+        reminderTask = Task { try? await Task.sleep(for: .milliseconds(350)); guard !Task.isCancelled else { return }; let status = await HabitReminders.sync(db); await JournalReminders.sync(db); if !Task.isCancelled { reminderStatus = status } }
     }
     func toggleDay(_ habit: Habit, date: Date) {
         let amount: Int? = Tracker.complete(habit, db: db, date: date) ? nil : 1
@@ -159,6 +160,7 @@ import FamilyControls
             // Restores never silently activate app shields or retain authorization tokens.
             for i in restored.rules.indices { restored.rules[i].enabled = false; restored.rules[i].session = nil; restored.rules[i].activitySelection = nil; restored.rules[i].commitmentUntil = nil }
             for i in restored.habits.indices where restored.habits[i].kind == .appTime { restored.habits[i].activitySelection = nil }
+            if restored.journal == nil { restored.journal = db.journal }
             restored.timer = nil
             restored.emergencyUses = min(restored.emergencyUses, db.emergencyUses)
             restored.emergencyUntil = nil

@@ -12,8 +12,8 @@
       "SWIFT_VERSION": "5.0",
       "TARGETED_DEVICE_FAMILY": "1,2",
       "IPHONEOS_DEPLOYMENT_TARGET": "18.0",
-      "MARKETING_VERSION": "1.1",
-      "CURRENT_PROJECT_VERSION": "7",
+      "MARKETING_VERSION": "2.0",
+      "CURRENT_PROJECT_VERSION": "8",
       "CODE_SIGN_STYLE": "Automatic",
       "SWIFT_STRICT_CONCURRENCY": "minimal"
     }
@@ -37,13 +37,13 @@
       "info": {
         "path": "Generated/App-Info.plist",
         "properties": {
-          "CFBundleDisplayName": "Abitudini Locale",
+          "CFBundleDisplayName": "Quaderno Locale",
           "CFBundleDevelopmentRegion": "it",
           "CFBundleLocalizations": [
             "it"
           ],
-          "CFBundleShortVersionString": "1.1",
-          "CFBundleVersion": "7",
+          "CFBundleShortVersionString": "2.0",
+          "CFBundleVersion": "8",
           "UILaunchScreen": {},
           "UISupportedInterfaceOrientations": [
             "UIInterfaceOrientationPortrait",
@@ -62,7 +62,10 @@
                 "abitudinilocale"
               ]
             }
-          ]
+          ],
+          "NSMicrophoneUsageDescription": "Registra una nota vocale da allegare alla tua pagina.",
+          "NSFaceIDUsageDescription": "Proteggi il tuo quaderno personale con Face ID.",
+          "NSRemindersFullAccessUsageDescription": "Importa nel journal i promemoria della lista che scegli, anche quelli creati con Siri su Apple Watch."
         }
       }
     },
@@ -70,7 +73,7 @@
       "type": "bundle.ui-testing",
       "platform": "iOS",
       "sources": [
-        "UITests"
+        "UITests/QuadernoUITests.swift"
       ],
       "dependencies": [
         {

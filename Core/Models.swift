@@ -78,6 +78,7 @@ struct Spend: Codable, Identifiable, Equatable {
     var date: Date
 }
 struct HabitDatabase: Codable {
+    var journal: JournalDatabase?
     var plans: [String: HabitPlan]?
     var notes: [String: String]?
     var checkInMinute: Int?
@@ -111,6 +112,7 @@ struct HabitDatabase: Codable {
         guard Set(samples.map { $0.habitID.uuidString + "|" + $0.day + "|" + $0.key }).count == samples.count else { throw HabitError.invalid }
         for s in spends { guard ruleIDs.contains(s.ruleID), s.day.count == 10 else { throw HabitError.invalid } }
         if let t = timer { guard ids.contains(t.habitID), t.uptime.isFinite, t.uptime >= 0 else { throw HabitError.invalid } }
+        _ = try journal?.validated()
         return self
     }
     mutating func upsert(_ value: ProgressSample) {

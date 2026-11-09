@@ -71,6 +71,6 @@ struct PauseHabitTimerIntent: AppIntent {
     @MainActor func perform() async throws -> some IntentResult { try HabitEnvironment.repository.update { HabitEngine.settleTimer(&$0, now: Date()) }; LiveTimer.end(); NotificationCenter.default.post(name: .habitDataChanged, object: nil); WidgetCenter.shared.reloadAllTimelines(); return .result() }
 }
 struct HabitShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] { AppShortcut(intent: PauseHabitTimerIntent(), phrases: ["Ferma il timer in \(.applicationName)"], shortTitle: "Ferma timer", systemImageName: "pause.circle") }
+    static var appShortcuts: [AppShortcut] { AppShortcut(intent: PauseHabitTimerIntent(), phrases: ["Ferma il timer in \(.applicationName)"], shortTitle: "Ferma timer", systemImageName: "pause.circle"); AppShortcut(intent: JournalCaptureIntent(), phrases: ["Annota in \(.applicationName)"], shortTitle: "Annota", systemImageName: "square.and.pencil") }
 }
 #endif
