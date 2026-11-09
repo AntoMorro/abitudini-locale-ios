@@ -6,7 +6,7 @@
     "base": {
       "APP_GROUP": "group.local.abitudinilocale.shared",
       "MARKETING_VERSION": "2.0",
-      "CURRENT_PROJECT_VERSION": "8"
+      "CURRENT_PROJECT_VERSION": "9"
     }
   },
   "targets": {
@@ -35,7 +35,7 @@
           "HabitAppGroup": "$(APP_GROUP)",
           "NSSupportsLiveActivities": true,
           "CFBundleShortVersionString": "2.0",
-          "CFBundleVersion": "8",
+          "CFBundleVersion": "9",
           "CFBundleDisplayName": "Quaderno Locale",
           "NSMicrophoneUsageDescription": "Registra una nota vocale da allegare alla tua pagina.",
           "NSFaceIDUsageDescription": "Proteggi il tuo quaderno personale con Face ID.",
@@ -72,7 +72,7 @@
           },
           "HabitAppGroup": "$(APP_GROUP)",
           "CFBundleShortVersionString": "2.0",
-          "CFBundleVersion": "8"
+          "CFBundleVersion": "9"
         }
       },
       "entitlements": {

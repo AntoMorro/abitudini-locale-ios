@@ -24,7 +24,7 @@ struct JournalClip:Equatable {var data:Data;var duration:Double}
     @discardableResult func finish()->(Data,Double)? {
         guard let r=recorder,let file=file else{return nil};let duration=elapsed;recorder=nil;r.stop();recording=false
         defer{try? FileManager.default.removeItem(at:file);self.file=nil;try? AVAudioSession.sharedInstance().setActive(false,options:.notifyOthersOnDeactivation)}
-        do{let data=try Data(contentsOf:file);guard !data.isEmpty,data.count<=3_000_000 else{throw HabitError.invalid};clip=JournalClip(data:data,duration:duration);return(data,duration)}catch{self.error=error.localizedDescription;return nil}
+        do{let data=try Data(contentsOf:file);guard !data.isEmpty,data.count<=3_000_000 else{throw HabitError.invalid};let actualDuration=(try? AVAudioPlayer(data:data).duration) ?? duration;clip=JournalClip(data:data,duration:min(120,actualDuration));return(data,min(120,actualDuration))}catch{self.error=error.localizedDescription;return nil}
     }
     func cancel(){let r=recorder;recorder=nil;r?.stop();recording=false;if let file=file{try? FileManager.default.removeItem(at:file)};file=nil;try? AVAudioSession.sharedInstance().setActive(false,options:.notifyOthersOnDeactivation)}
     nonisolated func audioRecorderDidFinishRecording(_ recorder:AVAudioRecorder,successfully flag:Bool){Task{@MainActor in if flag{_ = self.finish()}else{self.error="Registrazione interrotta.";self.cancel()}}}
@@ -33,9 +33,9 @@ struct JournalClip:Equatable {var data:Data;var duration:Double}
     static let shared=JournalPrivacy()
     private var shield:UIView?
     private var unlocked=false
-    func update(enabled:Bool,active:Bool) {
+    func update(enabled:Bool,active:Bool,background:Bool=false) {
         if !enabled{shield?.removeFromSuperview();shield=nil;unlocked=false;return}
-        if !active{unlocked=false;show()}else if !unlocked{show()}
+        if !active{if background{unlocked=false};show()}else if !unlocked{show()}else{shield?.removeFromSuperview();shield=nil}
     }
     private func show(){
         guard shield==nil,let window=UIApplication.shared.connectedScenes.compactMap({$0 as? UIWindowScene}).flatMap(\.windows).first(where:{$0.isKeyWindow}) else{return}

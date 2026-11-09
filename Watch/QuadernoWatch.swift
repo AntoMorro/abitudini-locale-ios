@@ -16,9 +16,10 @@ import AppIntents
     }
     func saveQueue(){UserDefaults.standard.set(try? JSONEncoder().encode(pending),forKey:"journal.pending");UserDefaults.standard.set(try? JSONEncoder().encode(failed),forKey:"journal.failed")}
     @discardableResult func enqueue(_ value:JournalWatchCommand)->Bool {
-        guard pending.count<100 else{status="Coda piena: apri l'iPhone prima di aggiungere altro.";return false}
+        guard pending.count+failed.count<100 else{status="Coda piena: apri l'iPhone prima di aggiungere altro.";return false}
         do{try value.validate();pending.append(value);saveQueue();status="In coda · attendo conferma iPhone";WKInterfaceDevice.current().play(.click);send();return true}catch{status=error.localizedDescription;return false}
     }
+    func retryFailed(_ id:UUID){guard let i=failed.firstIndex(where:{$0.id==id}) else{return};var c=failed.remove(at:i);c.created=Date();pending.append(c);saveQueue();send()}
     func send(){let s=WCSession.default;guard s.activationState == .activated else{return};let outstanding=Set(s.outstandingUserInfoTransfers.compactMap{($0.userInfo["id"] as? String)})
         for command in pending where !outstanding.contains(command.id.uuidString){if let data=try? JSONEncoder().encode(command){s.transferUserInfo(["command":data,"id":command.id.uuidString])}}
     }
@@ -41,6 +42,8 @@ struct WatchJournalHome:View {
     @EnvironmentObject var store:JournalWatchStore
     @Environment(\.scenePhase) private var phase
     @State private var capture=false
+    @State private var discardID:UUID?
+    @State private var discarding=false
     var body:some View {NavigationStack{List{
         Section{Button("Annota al volo",systemImage:"square.and.pencil"){capture=true}.buttonStyle(.borderedProminent);Text(store.status).font(.caption2).foregroundStyle(.secondary);if !store.pending.isEmpty{Text("\(store.pending.count) azioni in attesa").font(.caption)}}
         Section("Come stai?"){HStack{ForEach(1...5,id:\.self){m in Button(["😔","🙁","😐","🙂","😄"][m-1]){_ = store.enqueue(JournalWatchCommand(action:.mood,mood:m))}.buttonStyle(.plain)}}}
@@ -49,9 +52,9 @@ struct WatchJournalHome:View {
             Section("Abitudini"){ForEach(snapshot.habits){h in Button{_ = store.enqueue(JournalWatchCommand(action:.completeHabit,targetID:h.id))}label:{Label(h.title,systemImage:h.complete ? "checkmark.circle.fill":"circle")}.disabled(h.complete || !h.manual)}}
             Text("Riepilogo del "+snapshot.date.formatted(date:.abbreviated,time:.shortened)).font(.caption2).foregroundStyle(.secondary)
         }
-        if !store.failed.isEmpty{Section("Bozze da recuperare"){ForEach(store.failed){c in VStack(alignment:.leading){Text(c.text.isEmpty ? c.action.rawValue:c.text);Text("Non salvato su iPhone. Il contenuto resta qui.").font(.caption2)}}}}
+        if !store.failed.isEmpty{Section("Bozze da recuperare"){ForEach(store.failed){c in VStack(alignment:.leading){Text(c.text.isEmpty ? c.action.rawValue:c.text);Text("Non salvato su iPhone. Il contenuto resta qui.").font(.caption2);Button("Riprova bozza"){store.retryFailed(c.id)};Button("Scarta",role:.destructive){discardID=c.id;discarding=true}}}}}
         Button("Riprova invio"){store.send()}
-    }.navigationTitle("Quaderno").sheet(isPresented:$capture){WatchCapture()}.onOpenURL{url in if url.host=="capture"{capture=true}}.onReceive(NotificationCenter.default.publisher(for:Notification.Name("journal.capture"))){_ in capture=true}.onChange(of:phase){_,p in if p == .active{if UserDefaults.standard.bool(forKey:"journal.capture"){UserDefaults.standard.set(false,forKey:"journal.capture");capture=true};store.send()}}}}
+    }.navigationTitle("Quaderno").confirmationDialog("Scartare questa bozza dal Watch?",isPresented:$discarding,presenting:discardID){id in Button("Scarta bozza",role:.destructive){store.failed.removeAll{$0.id==id};store.saveQueue()}}.sheet(isPresented:$capture){WatchCapture()}.onOpenURL{url in if url.host=="capture"{capture=true}}.onReceive(NotificationCenter.default.publisher(for:Notification.Name("journal.capture"))){_ in capture=true}.onChange(of:phase){_,p in if p == .active{if UserDefaults.standard.bool(forKey:"journal.capture"){UserDefaults.standard.set(false,forKey:"journal.capture");capture=true};store.send()}}}}
 }
 struct WatchCapture:View {
     @EnvironmentObject var store:JournalWatchStore
