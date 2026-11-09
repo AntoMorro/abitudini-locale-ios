@@ -21,3 +21,7 @@ Il ramo `healthkit-probe` contiene la variante; il ramo main resta alla release 
 ## Verifica della build
 
 Build dispositivo riuscita: https://github.com/AntoMorro/abitudini-locale-ios/actions/runs/42642558157 . Versione 2.0 (10). Controllati CRC dello ZIP, digest dell’artefatto e bundle ID; letto indipendentemente l’entitlement HealthKit dalla firma Mach-O del pacchetto scaricato. SHA-256 IPA: `7346a97529a60b86da153b2901baee8246bb8e15c5b7ccef87c1179291fa853a`. Installazione, profilo finale e lettura reale devono ancora essere verificati sul telefono.
+
+## Esito sul dispositivo
+
+L’utente ha segnalato HealthKit codice 4: manca `com.apple.developer.healthkit` nell’app installata. La lettura diretta non funziona con il percorso Sideloadly provato. Il pacchetto precedente alla firma conteneva la capability; firma/profilo finali non sono stati ispezionati indipendentemente. L’errore non dipende dal consenso sui singoli dati. Nessun valore sanitario è stato raccolto. Il changelog ufficiale Sideloadly descrive l’opzione per entitlements personalizzati come funzione Patreon per account Apple Developer Program: https://sideloadly.io/changelog . Non è quindi una soluzione documentata a costo zero per la configurazione attuale.

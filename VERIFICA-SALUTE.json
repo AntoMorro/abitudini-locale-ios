@@ -8,8 +8,8 @@
   "verification": {
     "native_build": "passed",
     "packaged_healthkit_entitlement": "passed: independently parsed Mach-O LC_CODE_SIGNATURE XML entitlements",
-    "Sideloadly_signature_and_profile": "not yet tested",
-    "real_iPhone_read_access": "not yet tested",
+    "Sideloadly_signature_and_profile": "installed app lacks required runtime entitlement; exact final signature/profile not independently inspected",
+    "real_iPhone_read_access": "failed: user reported HealthKit code 4, missing com.apple.developer.healthkit entitlement",
     "zip_crc": "passed",
     "artifact_sha256": "passed",
     "UI_or_permission_test_on_device": "not yet tested"
@@ -45,5 +45,11 @@
   },
   "workflow_url": "https://github.com/AntoMorro/abitudini-locale-ios/actions/runs/42642558157",
   "minimum_iOS": "18.0",
-  "contains_personal_health_data": false
+  "contains_personal_health_data": false,
+  "device_test": {
+    "reported_error": "HealthKit code 4: missing com.apple.developer.healthkit entitlement",
+    "diagnosis": "Runtime entitlement missing, not a health-data read-consent denial",
+    "status": "Direct access not working with tested signing flow",
+    "personal_health_values_collected": false
+  }
 }
