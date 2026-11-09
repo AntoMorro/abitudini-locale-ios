@@ -92,7 +92,7 @@ struct WellnessSleepView:View {
             let valid=nights.filter{$0.seconds>0}
             Chart(Array(valid.enumerated()),id:\.offset){_,n in BarMark(x:.value("Notte",n.date,unit:.day),y:.value("Ore",n.seconds/3600)).foregroundStyle(.indigo)}.frame(height:170)
             let debt=valid.reduce(0){$0+max(0,goal-$1.seconds)}
-            WellnessCard(title:"Deficit rispetto al tuo obiettivo",value:WellnessFormat.hours(debt),unit:"Solo \(valid.count) notti disponibili delle ultime 14")
+            WellnessCard(title:"Deficit rispetto al tuo obiettivo",value:valid.isEmpty ? "—":WellnessFormat.hours(debt),unit:"Solo \(valid.count) notti disponibili delle ultime 14")
             if let sd=WellnessAnalysis.circularMinuteDeviation(valid.compactMap(\.end).map{Double(Calendar.current.component(.hour,from:$0)*60+Calendar.current.component(.minute,from:$0))}),valid.count>=7 {Text("Variabilità dell’orario di risveglio: \(Int(sd)) min (deviazione circolare, gestisce mezzanotte).").font(.caption)}
             Text("Finestra: da mezzogiorno del giorno precedente a mezzogiorno della data scelta. Una sola fonte per notte, sovrapposizioni risolte senza doppio conteggio. Se manca la fase, resta ‘Addormentato’; non vengono inventati REM o sonno profondo. Il deficit non è una prescrizione di ore da recuperare.").font(.caption).foregroundStyle(.secondary)
         }

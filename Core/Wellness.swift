@@ -24,10 +24,10 @@ enum WellnessPhase: String, Codable, CaseIterable, Identifiable {
         let s = text.folding(options:[.diacriticInsensitive,.caseInsensitive],locale:Locale(identifier:"it_IT")).trimmingCharacters(in:.whitespacesAndNewlines)
         if s == "0" || s == "inbed" || s.contains("a letto") || s == "in bed" { return .inBed }
         if s == "2" || s.contains("svegl") || s == "awake" { return .awake }
-        if s == "4" || s.contains("profond") || s == "deep" { return .deep }
+        if s == "4" || s.contains("profond") || s == "deep" || s == "asleep deep" { return .deep }
         if s == "5" || s.contains("rem") { return .rem }
-        if s == "3" || s.contains("essenzial") || s.contains("legger") || s == "core" { return .core }
-        if s == "1" || s == "asleep" || s == "asleepunspecified" || s.contains("addormentato") || s == "sonno" { return .asleep }
+        if s == "3" || s.contains("essenzial") || s.contains("legger") || s == "core" || s == "asleep core" { return .core }
+        if ["1","asleep","asleepunspecified","asleep unspecified","addormentato","addormentato (non specificato)","sonno"].contains(s) { return .asleep }
         throw WellnessError.invalid("Fase sonno non riconosciuta: usa 0 a letto, 1 addormentato, 2 sveglio, 3 essenziale, 4 profondo o 5 REM.")
     }
 }

@@ -58,7 +58,7 @@ final class WellnessTests:XCTestCase {
     }
     func testInvalidSleepAndFutureAreRejected()throws{
         XCTAssertThrowsError(try segment(date(2),date(1),.asleep).validate(now:date(30)));XCTAssertThrowsError(try record(.hrv,40,date(30)).validate(now:date(1)))
-        XCTAssertThrowsError(try WellnessPhase.parse("qualcosa"));XCTAssertEqual(try WellnessPhase.parse("Sonno profondo"),.deep)
+        XCTAssertThrowsError(try WellnessPhase.parse("qualcosa"));XCTAssertThrowsError(try WellnessPhase.parse("addormentato (non supportato)"));XCTAssertEqual(try WellnessPhase.parse("asleep core"),.core);XCTAssertEqual(try WellnessPhase.parse("Sonno profondo"),.deep)
     }
     func testCircularWakeTimesDoNotExplodeAtMidnight(){let x=[1430.0,10,1430,10,1430,10,0];XCTAssertLessThan(WellnessAnalysis.circularMinuteDeviation(x)!,15)}
     func testConstantSeriesHasNoCorrelation(){XCTAssertNil(WellnessAnalysis.correlation(Array(repeating:(40,60),count:15)))}
