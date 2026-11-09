@@ -17,3 +17,7 @@ L'IPA include una firma ad hoc che mantiene `com.apple.developer.healthkit=true`
 Apple elenca HealthKit anche per Apple Developer senza membership a pagamento: https://developer.apple.com/help/account/reference/supported-capabilities-ios . Per l'autorizzazione di lettura: https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data .
 
 Il ramo `healthkit-probe` contiene la variante; il ramo main resta alla release journal verificata. Non attiviamo HealthKit background delivery, Health Records, App Groups o Screen Time. Non serve installare una companion Watch per leggere sul telefono i campioni già sincronizzati in Salute.
+
+## Verifica della build
+
+Build dispositivo riuscita: https://github.com/AntoMorro/abitudini-locale-ios/actions/runs/42642558157 . Versione 2.0 (10). Controllati CRC dello ZIP, digest dell’artefatto e bundle ID; letto indipendentemente l’entitlement HealthKit dalla firma Mach-O del pacchetto scaricato. SHA-256 IPA: `7346a97529a60b86da153b2901baee8246bb8e15c5b7ccef87c1179291fa853a`. Installazione, profilo finale e lettura reale devono ancora essere verificati sul telefono.

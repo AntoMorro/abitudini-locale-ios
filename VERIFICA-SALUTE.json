@@ -1,0 +1,49 @@
+{
+  "app": "Quaderno Locale — Prova Salute",
+  "version": "2.0",
+  "build": 10,
+  "source_commit": "b793d40d65e29df3ea66a903cf13451a5c435787",
+  "branch": "healthkit-probe",
+  "workflow_run": 42642558157,
+  "verification": {
+    "native_build": "passed",
+    "packaged_healthkit_entitlement": "passed: independently parsed Mach-O LC_CODE_SIGNATURE XML entitlements",
+    "Sideloadly_signature_and_profile": "not yet tested",
+    "real_iPhone_read_access": "not yet tested",
+    "zip_crc": "passed",
+    "artifact_sha256": "passed",
+    "UI_or_permission_test_on_device": "not yet tested"
+  },
+  "scope": {
+    "read_only": true,
+    "request_only_on_user_button": true,
+    "sample_window_days": 30,
+    "types": [
+      "heartRate",
+      "heartRateVariabilitySDNN",
+      "restingHeartRate",
+      "sleepAnalysis",
+      "workout",
+      "activeEnergyBurned"
+    ],
+    "network_transmission": false,
+    "persist_health_results": false,
+    "watch_app_required": false
+  },
+  "bundle_identifier": "local.abitudinilocale.habits",
+  "data_safety": "Update in place using same Apple ID/bundle-ID options. Export journal backup first. Do not uninstall.",
+  "artifact": {
+    "file": "outputs\\QuadernoLocale-Salute-da-firmare.ipa",
+    "bytes": 1151656,
+    "sha256": "7346a97529a60b86da153b2901baee8246bb8e15c5b7ccef87c1179291fa853a",
+    "version": "2.0",
+    "build": "10",
+    "entitlements": {
+      "com.apple.developer.healthkit": true
+    },
+    "device_provisioning": "not present; needs Sideloadly signing"
+  },
+  "workflow_url": "https://github.com/AntoMorro/abitudini-locale-ios/actions/runs/42642558157",
+  "minimum_iOS": "18.0",
+  "contains_personal_health_data": false
+}
