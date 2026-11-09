@@ -35,3 +35,9 @@ Il pacchetto Base è il candidato per l'installazione gratuita iPhone con Sidelo
 Realizzazione indipendente, con modelli e interfaccia originali. Riferimenti: [metodo Bullet Journal](https://bulletjournal.com/pages/migration), [setup pubblico AmandaRachLee](https://www.youtube.com/watch?v=erf7mDtZw9k), [modelli Day One](https://dayoneapp.com/guides/tips-and-tutorials/templates/), [umore Daylio](https://daylio.net/faq/docs/daylio-faq/tutorials/create-and-manage-moods/), [Diario Apple](https://support.apple.com/it-it/guide/iphone/iph9824e83ce/27/ios/27).
 
 Integrazioni: [WatchConnectivity](https://developer.apple.com/documentation/watchconnectivity), [Siri su Apple Watch](https://support.apple.com/it-it/guide/watch/apd60099a41a/27/watchos/27), [account Apple e Personal Team](https://developer.apple.com/help/account/basics/about-your-developer-account). Lo stato effettivo delle build e dei test è riportato in VERIFICA.json quando disponibile; nessun dato personale nei test CI.
+
+## Release verificata: 2.0 (9)
+
+[Build e test](https://github.com/AntoMorro/abitudini-locale-ios/actions/runs/42594077547) del commit `ea1844de83735ec4d6b73b4a5d5b1766b79c7a7a`: 33 test core superati, build Release iPhone riuscita, build con companion Watch e complicazione riuscita, un test completo UI superato sul simulatore iPhone 16 Pro con sette schermate esportate. I due IPA hanno superato il controllo ZIP CRC e il confronto SHA-256 degli artefatti scaricati. I 53 file sorgenti locali corrispondevano ai blob della build prima dell’aggiunta di questo rapporto.
+
+La firma/installazione sul telefono e sul Watch reali, la conservazione dell’archivio durante quell’aggiornamento, i permessi Foto/Microfono/Promemoria, la protezione Face ID e l’esportazione PDF con media sul dispositivo personale restano da provare. I test usano soltanto dati fittizi. Per aggiornare usare [INSTALLAZIONE.md](INSTALLAZIONE.md); i dettagli e gli hash sono in [VERIFICA.json](VERIFICA.json).

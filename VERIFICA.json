@@ -1,100 +1,109 @@
 {
-  "checked_at": "2026-11-02",
-  "project": "Abitudini Locale",
-  "version": "1.1",
-  "source_commit": "d04a9d924d7e0667cf7e0f5a4c23c7201ad56950",
-  "binary_source_commit": "d04a9d924d7e0667cf7e0f5a4c23c7201ad56950",
-  "ci_run_id": 41520832819,
+  "app": "Quaderno Locale",
+  "version": "2.0",
+  "build": 9,
+  "date": "2026-11-09",
+  "source_commit": "ea1844de83735ec4d6b73b4a5d5b1766b79c7a7a",
+  "workflow_run": 42594077547,
+  "workflow_url": "https://github.com/AntoMorro/abitudini-locale-ios/actions/runs/42594077547",
+  "bundle_identifier": "local.abitudinilocale.habits",
+  "minimum_iOS": "18.0",
+  "minimum_watchOS": "11.0",
   "core_tests": {
-    "status": "passed",
-    "count": 20
+    "result": "passed",
+    "count": 33,
+    "journal_tests": 13,
+    "existing_habit_tests": 20,
+    "fixtures": "fictional only"
   },
-  "compilation": {
-    "base": "passed",
-    "widgets": "passed",
-    "complete": "passed"
+  "iphone_release_build": "passed",
+  "paired_watch_release_build": "passed",
+  "ui_test": {
+    "result": "passed",
+    "count": 1,
+    "failures": 0,
+    "duration_seconds": 114.565,
+    "device": "iPhone 16 Pro simulator, Xcode 16.4",
+    "flow": [
+      "Rapid task creation and completion",
+      "Diary page creation and opening",
+      "Agenda",
+      "Existing habit tab",
+      "Watch settings",
+      "Journal templates"
+    ],
+    "screenshots": 7,
+    "artifact_id": 13663232473,
+    "physical_device": false
   },
-  "native_ui_tests": {
-    "status": "passed",
-    "variant": "Base",
-    "run_id": 41520832819,
-    "job_id": 125536097649,
-    "test": "testTrackerCreateToggleCalendarAndStatistics",
-    "duration_seconds": 80.126,
-    "device": "iPhone 16 Pro simulator",
-    "ios": "18.5",
-    "steps": [
-      "create_habit",
-      "complete_today",
-      "open_detail",
-      "save_daily_note",
-      "undo_completion",
-      "open_statistics",
-      "open_settings_and_checkin_control"
-    ]
-  },
-  "binary_checks": {
-    "arm64": true,
-    "artifact_download_digests_verified": true,
-    "bundle_versions_match": true,
-    "minimum_ios": "18.0"
-  },
-  "physical_device": {
-    "installation": "not_performed",
-    "widgets_and_shared_storage": "pending_valid_signing_and_device_test",
-    "screen_time": "pending_paid_membership_profiles_and_consent",
-    "notifications": "pending_device_consent_and_delivery_check",
-    "health": "pending_profile_and_device_test"
-  },
-  "binaries": [
+  "archive_integrity": "ZIP CRC passed; official artifact SHA-256 checked before extraction",
+  "artifacts": [
     {
-      "file": "AbitudiniLocale-Base-unsigned.ipa",
-      "bytes": 593031,
-      "sha256": "78cda56c9b426a3c68060b1ba3ec96a25a7258fe46429283bc7738ee216c9617",
-      "version": "1.1",
-      "build": "7",
-      "architecture": "arm64",
-      "extensions": 0,
-      "signed": false
+      "file": "QuadernoLocale-Base-unsigned.ipa",
+      "bytes": 1082658,
+      "sha256": "2ac6e8ca159dd3b3ceba13b35fa7780db57c497e3ce7dfa7380bddc55fc238f1",
+      "signed": false,
+      "binaries": [
+        {
+          "bundle": "local.abitudinilocale.habits",
+          "version": "9",
+          "mach_o_magic": "cffaedfe",
+          "bytes": 4635128
+        }
+      ]
     },
     {
-      "file": "AbitudiniLocale-Completa-unsigned.ipa",
-      "bytes": 975047,
-      "sha256": "f9eb74e9d03084e0c86923306e615a164df6edbc3a4f02989cb212e43261c5e3",
-      "version": "1.1",
-      "build": "7",
-      "architecture": "arm64",
-      "extensions": 5,
-      "signed": false
-    },
-    {
-      "file": "AbitudiniLocale-Widgets-unsigned.ipa",
-      "bytes": 795847,
-      "sha256": "04826991e34596f2b2c45a648399e3e9cc9849519526194e71576d38e22d6a62",
-      "version": "1.1",
-      "build": "7",
-      "architecture": "arm64",
-      "extensions": 1,
-      "signed": false
+      "file": "QuadernoLocale-Watch-unsigned.ipa",
+      "bytes": 1307912,
+      "sha256": "b35d0caa343aa5498a99169fe451628e7882a13f4397a62ab9af51d2d2ede0d3",
+      "signed": false,
+      "binaries": [
+        {
+          "bundle": "local.abitudinilocale.habits.watchkitapp.capture",
+          "version": "9",
+          "mach_o_magic": "cafebabe",
+          "bytes": 275016
+        },
+        {
+          "bundle": "local.abitudinilocale.habits.watchkitapp",
+          "version": "9",
+          "mach_o_magic": "cafebabe",
+          "bytes": 936800
+        },
+        {
+          "bundle": "local.abitudinilocale.habits",
+          "version": "9",
+          "mach_o_magic": "cffaedfe",
+          "bytes": 4635160
+        }
+      ]
     }
   ],
-  "scope": "HabitKit-inspired core habit tracking with documented differences. Existing Screen Time implementation retained. See README and ANALISI.",
-  "source_archive_note": "App, extension and core files match compiled commit d04a9d924d7e0667cf7e0f5a4c23c7201ad56950. Later changes only affect diagnostic scripts, documentation and verification evidence.",
-  "optional_direct_render_probe": {
-    "run_id": 41521175557,
-    "status": "failed_readiness_assertion",
-    "observation": "The captured detail screenshot is rendered and console contains no fatal error. The separate full UI flow passed.",
-    "harness_followup": "Adjusted to check the app PID rather than the console helper and an optional readiness marker; Python syntax checked, adjusted optional probe not rerun."
+  "data_compatibility": {
+    "legacy_model_test": "passed; habit sample and identifier retained when decoding old JSON without journal",
+    "location": "Application Support/AbitudiniLocale/abitudini.json",
+    "installation_requirement": "Same Apple ID and Sideloadly bundle-ID configuration; install over existing app; do not uninstall",
+    "physical_update_preserves_user_data": "not yet verified on user iPhone"
   },
-  "windows_installation_control": {
-    "status": "unavailable",
-    "error": "failed to write kernel assets: The system cannot find the path specified. (os error 3)",
-    "phone_installation": "user_must_load_IPA_and_sign_in_Sideloadly"
+  "not_verified_on_physical_devices": [
+    "Sideloadly signing and installation of this version",
+    "Apple Watch installation, signing and real WatchConnectivity delivery",
+    "Face ID/passcode lock and privacy overlay during permission prompts",
+    "Microphone, PhotosPicker, PencilKit and PDF export on user iPhone",
+    "EventKit permission and import from real Reminders list",
+    "User-specific backup recovery"
+  ],
+  "optional_old_targets": "Inherited widget/HealthKit/Screen Time project variants retained as source; not included in Base and not built or signed for this release",
+  "privacy": "No user journals or backups in CI fixtures. Exported JSON includes media and is readable, not encrypted by the app.",
+  "source_integrity": {
+    "files_matching_remote_git_blobs": 53,
+    "mismatches": 0,
+    "normalization": "UTF-8 source read with universal newlines, PNG bytes unchanged"
   },
-  "native_ui_screenshots": [
-    "VerificaSchermate/01-Abitudini.png",
-    "VerificaSchermate/02-Dettaglio.png",
-    "VerificaSchermate/03-Statistiche.png",
-    "VerificaSchermate/04-Impostazioni.png"
-  ]
+  "jobs": {
+    "base": 129082376026,
+    "watch": 129082376351,
+    "ui": 129082376602
+  },
+  "screenshot_directory": "../QuadernoLocale-Schermate"
 }
