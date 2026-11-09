@@ -27,8 +27,11 @@ enum WellnessPhase: String, Codable, CaseIterable, Identifiable {
         if s == "4" || s.contains("profond") || s.contains("deep") { return .deep }
         if s == "5" || s.contains("rem") { return .rem }
         if s == "3" || s.contains("essenzial") || s.contains("legger") || s.contains("core") { return .core }
-        if ["1","asleep","asleepunspecified","asleep unspecified","addormentato","addormentato (non specificato)","sonno"].contains(s) { return .asleep }
-        throw WellnessError.invalid("Fase sonno non riconosciuta: usa 0 a letto, 1 addormentato, 2 sveglio, 3 essenziale, 4 profondo o 5 REM.")
+        if ["1","asleep","asleepunspecified","asleep unspecified","asleep (unspecified)","addormentato","addormentato (non specificato)","addormentato non specificato","sonno","in sonno","in sonno (non specificato)","sonno (non specificato)","sonno non specificato"].contains(s) { return .asleep }
+        // Report only a short alphabetic category label, never a raw quantity, duration or JSON.
+        let allowed=CharacterSet.letters.union(.whitespaces).union(CharacterSet(charactersIn:"()’-"))
+        let label = !s.isEmpty && s.count<=80 && s.unicodeScalars.allSatisfy({allowed.contains($0)}) ? "Etichetta non riconosciuta: «\(s)»." : s.isEmpty ? "La fase ricevuta è vuota." : "Il campo fase non contiene un’etichetta riconoscibile."
+        throw WellnessError.invalid(label+" Usa 0 a letto, 1 addormentato, 2 sveglio, 3 essenziale, 4 profondo o 5 REM. Nessun campione del lotto è salvato.")
     }
 }
 struct WellnessRecord: Codable, Identifiable, Equatable {

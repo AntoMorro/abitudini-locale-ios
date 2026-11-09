@@ -27,4 +27,22 @@ final class WellnessShortcutTests:XCTestCase {
         let e=WellnessEnvelope(version:1,records:[WellnessWire(type:.rhr,start:"2026-01-01T07:30:00+01:00",value64:base64("60 bpm"),unit64:base64("bpm"))])
         let records=try WellnessImport.decode(JSONEncoder().encode(e));var a=WellnessArchive();try a.merge(records);try a.merge(records);XCTAssertEqual(a.records.count,1);XCTAssertEqual(a.records[0].value,60)
     }
+    func testGenericSleepLabelsRemainUnspecified()throws{
+        for label in ["In sonno","Sonno (non specificato)","Asleep (Unspecified)","ADDORMENTATO NON SPECIFICATO"]{
+            let w=WellnessWire(type:.sleep,start:"2026-01-01T01:00:00+01:00",end:"2026-01-01T01:10:00+01:00",stage64:base64(label))
+            XCTAssertEqual(try WellnessImport.record(w).phase,.asleep)
+        }
+    }
+    func testShortcutsSpecificSleepLabelsPreservePhase()throws{
+        for (label,phase) in [("rem",WellnessPhase.rem),("veglia",.awake),("Essenziale",.core),("Profondo",.deep),("A letto",.inBed)]{
+            XCTAssertEqual(try WellnessPhase.parse(label),phase)
+        }
+    }
+    func testUnknownPhaseDiagnosticDoesNotExposeQuantitiesOrSavePartialBatch()throws{
+        XCTAssertThrowsError(try WellnessPhase.parse("fase nuova")){XCTAssertTrue($0.localizedDescription.contains("fase nuova"))}
+        XCTAssertThrowsError(try WellnessPhase.parse("12345 min")){XCTAssertFalse($0.localizedDescription.contains("12345"))}
+        let records=[WellnessWire(type:.sleep,start:"2026-01-01T01:00:00+01:00",end:"2026-01-01T01:10:00+01:00",stage:"rem"),WellnessWire(type:.sleep,start:"2026-01-01T01:10:00+01:00",end:"2026-01-01T01:20:00+01:00",stage:"fase nuova")]
+        let data=try JSONEncoder().encode(WellnessEnvelope(version:1,records:records));var a=WellnessArchive()
+        XCTAssertThrowsError(try a.merge(WellnessImport.decode(data)));XCTAssertTrue(a.records.isEmpty)
+    }
 }

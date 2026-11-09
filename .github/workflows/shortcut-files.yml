@@ -33,19 +33,19 @@ jobs:
           import plistlib,pathlib
           app=pathlib.Path('build/package/Payload/AbitudiniLocale.app')
           p=plistlib.loads((app/'Info.plist').read_bytes())
-          assert p['CFBundleVersion']=='13' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
+          assert p['CFBundleVersion']=='14' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
           PY
           cd build/package
-          zip -qry ../QuadernoSalute-v13-unsigned.ipa Payload
+          zip -qry ../QuadernoSalute-v14-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: QuadernoSalute-v13-IPA
-          path: build/QuadernoSalute-v13-unsigned.ipa
+          name: QuadernoSalute-v14-IPA
+          path: build/QuadernoSalute-v14-unsigned.ipa
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: QuadernoSalute-v13-verification
+          name: QuadernoSalute-v14-verification
           path: |
             shortcut-core-tests.log
             build-bridge.log
