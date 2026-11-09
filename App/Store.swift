@@ -29,6 +29,7 @@ import FamilyControls
                 db.samples = [ProgressSample(habitID: h.id, day: HabitEngine.day(Date()), key: "probe", amount: 1, date: Date())]
             }
         }
+        if HabitEnvironment.testing { seedWellnessPreview() }
         #endif
         if let timer = db.timer, !timer.background, timer.processID != ProcessInfo.processInfo.processIdentifier { change { $0.timer = nil } }
     }

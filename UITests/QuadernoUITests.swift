@@ -23,11 +23,24 @@ final class QuadernoUITests:XCTestCase {
         XCTAssertTrue(app.buttons["Aggiungi"].waitForExistence(timeout:8));app.buttons["Aggiungi"].tap()
         let value=app.textFields["wellnessManualValue"];XCTAssertTrue(value.waitForExistence(timeout:8));value.tap();value.typeText("42")
         app.buttons["Salva campione"].tap();XCTAssertTrue(app.staticTexts["HRV · SDNN"].firstMatch.waitForExistence(timeout:8));shot("08-Salute")
-        app.buttons["Recupero"].tap();shot("09-Recupero")
+        app.buttons["wellnessRecovery"].tap();shot("09-Recupero");app.navigationBars.buttons.element(boundBy:0).tap()
         app.buttons["Sonno"].tap();shot("10-Sonno")
         app.buttons["Trend"].tap();shot("11-Trend")
         app.swipeUp();app.swipeUp()
         app.buttons["Comandi Rapidi e sincronizzazione"].tap();XCTAssertTrue(app.buttons["Apri Comandi Rapidi"].waitForExistence(timeout:8));shot("12-ComandiSalute")
     }
 
+    func testModernWellnessDashboard() {
+        let app=XCUIApplication();app.launchArguments=["--ui-testing","--wellness-preview"];app.launch()
+        if app.buttons["Inizia"].waitForExistence(timeout:8){app.buttons["Inizia"].tap()}
+        XCTAssertTrue(app.buttons["Salute personale"].waitForExistence(timeout:10));app.buttons["Salute personale"].tap()
+        XCTAssertTrue(app.buttons["wellnessRecovery"].waitForExistence(timeout:10));shot("13-Salute-Visuale-DATI-FITTIZI")
+        app.buttons["Sonno"].tap();XCTAssertTrue(app.staticTexts["Il viaggio nel sonno"].waitForExistence(timeout:8));shot("14-Sonno-Visuale-DATI-FITTIZI")
+        app.buttons["Trend"].tap();XCTAssertTrue(app.staticTexts["Media dei giorni disponibili"].waitForExistence(timeout:8));shot("15-Trend-Visuale-DATI-FITTIZI")
+        app.buttons["Oggi"].tap();app.buttons["Strumenti Salute"].tap();XCTAssertTrue(app.buttons["Preferenze Salute"].waitForExistence(timeout:8));shot("16-Strumenti-Salute")
+        app.buttons["Comandi Rapidi e sincronizzazione"].tap();XCTAssertTrue(app.buttons["Aggiorna tutti i dati"].waitForExistence(timeout:8));shot("17-Comandi-Unificati")
+        app.terminate();app.launchArguments=["--ui-testing","--wellness-preview","-AppleInterfaceStyle","Dark"];app.launch()
+        if app.buttons["Inizia"].waitForExistence(timeout:8){app.buttons["Inizia"].tap()}
+        app.buttons["Salute personale"].tap();XCTAssertTrue(app.buttons["wellnessRecovery"].waitForExistence(timeout:10));shot("18-Salute-Dark-DATI-FITTIZI")
+    }
 }

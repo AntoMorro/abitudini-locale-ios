@@ -1,23 +1,10 @@
-name: Sign and verify ready-to-import health shortcuts
+name: Optional template signing (manual only)
 on:
-  push:
-    branches: [salute-shortcut-files]
-    paths: ['ShortcutFiles/Unsigned/**', 'ShortcutFiles/verify_and_sign.py', '.github/workflows/verify-shortcuts.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  shortcuts:
+  signing:
     runs-on: macos-15-intel
-    timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-      - name: Sign templates and verify Apple signatures and unchanged actions
-        timeout-minutes: 9
-        run: python3 ShortcutFiles/verify_and_sign.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Comandi-Salute-Pronti
-          path: shortcut-delivery
-          retention-days: 14
-
+      - run: echo 'Use official signing website; automatic signing requests are disabled.'

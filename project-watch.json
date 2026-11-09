@@ -13,8 +13,8 @@
       "SWIFT_VERSION": "5.0",
       "TARGETED_DEVICE_FAMILY": "1,2",
       "IPHONEOS_DEPLOYMENT_TARGET": "18.0",
-      "MARKETING_VERSION": "2.1",
-      "CURRENT_PROJECT_VERSION": "12",
+      "MARKETING_VERSION": "2.2",
+      "CURRENT_PROJECT_VERSION": "13",
       "CODE_SIGN_STYLE": "Automatic",
       "SWIFT_STRICT_CONCURRENCY": "minimal"
     }
@@ -43,8 +43,8 @@
           "CFBundleLocalizations": [
             "it"
           ],
-          "CFBundleShortVersionString": "2.1",
-          "CFBundleVersion": "12",
+          "CFBundleShortVersionString": "2.2",
+          "CFBundleVersion": "13",
           "UILaunchScreen": {},
           "UISupportedInterfaceOrientations": [
             "UIInterfaceOrientationPortrait",
@@ -123,8 +123,8 @@
         "path": "Generated/Watch-Info.plist",
         "properties": {
           "CFBundleDisplayName": "Quaderno",
-          "CFBundleShortVersionString": "2.1",
-          "CFBundleVersion": "12",
+          "CFBundleShortVersionString": "2.2",
+          "CFBundleVersion": "13",
           "WKApplication": true,
           "WKCompanionAppBundleIdentifier": "local.abitudinilocale.habits",
           "WKRunsIndependentlyOfCompanionApp": false,
@@ -160,8 +160,8 @@
         "path": "Generated/WatchWidget-Info.plist",
         "properties": {
           "CFBundleDisplayName": "Annota",
-          "CFBundleShortVersionString": "2.1",
-          "CFBundleVersion": "12",
+          "CFBundleShortVersionString": "2.2",
+          "CFBundleVersion": "13",
           "NSExtension": {
             "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
           }

@@ -1,8 +1,8 @@
-name: Build robust Shortcuts bridge
+name: Build visual Quaderno Salute
 on:
   push:
     branches: [salute-shortcut-files]
-    paths: ['Core/**', 'App/**', 'Tests/**', 'project*.json', '.github/workflows/shortcut-files.yml']
+    paths: ['Core/**', 'App/**', 'Tests/**', 'UITests/**', 'project*.json', '.github/workflows/shortcut-files.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,20 +32,77 @@ jobs:
           import plistlib,pathlib
           app=pathlib.Path('build/package/Payload/AbitudiniLocale.app')
           p=plistlib.loads((app/'Info.plist').read_bytes())
-          assert p['CFBundleVersion']=='12' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
+          assert p['CFBundleVersion']=='13' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
           PY
           cd build/package
-          zip -qry ../QuadernoSalute-v12-unsigned.ipa Payload
+          zip -qry ../QuadernoSalute-v13-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: QuadernoSalute-v12-IPA
-          path: build/QuadernoSalute-v12-unsigned.ipa
+          name: QuadernoSalute-v13-IPA
+          path: build/QuadernoSalute-v13-unsigned.ipa
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: QuadernoSalute-v12-verification
+          name: QuadernoSalute-v13-verification
           path: |
             shortcut-core-tests.log
             build-bridge.log
+          retention-days: 7
+
+  ui:
+    name: Bullet journal and habit UI verification
+    runs-on: macos-15-intel
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+      - name: Generate and select simulator
+        timeout-minutes: 8
+        run: |
+          xcodegen generate --spec project.json
+          python3 scripts/select_simulator.py >> "$GITHUB_ENV"
+      - name: Compile native app and UI tests
+        timeout-minutes: 12
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator CODE_SIGNING_ALLOWED=NO | tee build-ui-compile.log
+      - name: Boot simulator before UI test
+        timeout-minutes: 8
+        run: |
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          open -a Simulator --args -CurrentDeviceUDID "$SIMULATOR_ID"
+      - name: Native UI tests
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult CODE_SIGNING_ALLOWED=NO | tee build-ui.log
+      - name: Export test screenshots
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p build/screenshots
+          if [ -d build/UITests.xcresult ]; then
+            xcrun xcresulttool export attachments --path build/UITests.xcresult --output-path build/screenshots
+          fi
+      - name: Collect app crash diagnostics
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p build/diagnostics
+          xcrun simctl spawn "$SIMULATOR_ID" log show --last 15m --style compact --predicate 'process == "AbitudiniLocale"' > build/diagnostics/app-runtime.log 2>&1 || true
+          python3 - <<'PY'
+          import pathlib, shutil
+          source = pathlib.Path.home() / 'Library/Logs/DiagnosticReports'
+          for path in source.glob('AbitudiniLocale*.ips'):
+              shutil.copy2(path, pathlib.Path('build/diagnostics') / path.name)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: AbitudiniLocale-UI-verification
+          path: |
+            build/screenshots
+            build-ui.log
+            build-ui-compile.log
+            build/diagnostics
           retention-days: 7

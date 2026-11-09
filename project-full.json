@@ -40,8 +40,8 @@
       "info": {
         "properties": {
           "NSHealthShareUsageDescription": "Legge passi, allenamenti e minuti di meditazione per le abitudini scelte.",
-          "CFBundleShortVersionString": "2.1",
-          "CFBundleVersion": "12",
+          "CFBundleShortVersionString": "2.2",
+          "CFBundleVersion": "13",
           "CFBundleDisplayName": "Quaderno Locale",
           "NSMicrophoneUsageDescription": "Registra una nota vocale da allegare alla tua pagina.",
           "NSFaceIDUsageDescription": "Proteggi il tuo quaderno personale con Face ID.",
@@ -76,8 +76,8 @@
             "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitMonitor"
           },
           "HabitAppGroup": "$(APP_GROUP)",
-          "CFBundleShortVersionString": "2.1",
-          "CFBundleVersion": "12"
+          "CFBundleShortVersionString": "2.2",
+          "CFBundleVersion": "13"
         }
       },
       "entitlements": {
@@ -113,8 +113,8 @@
             "NSExtensionPointIdentifier": "com.apple.ManagedSettingsUI.shield-configuration-service",
             "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitShield"
           },
-          "CFBundleShortVersionString": "2.1",
-          "CFBundleVersion": "12"
+          "CFBundleShortVersionString": "2.2",
+          "CFBundleVersion": "13"
         }
       },
       "entitlements": {
@@ -147,8 +147,8 @@
             "NSExtensionPointIdentifier": "com.apple.ManagedSettings.shield-action-service",
             "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).HabitShieldAction"
           },
-          "CFBundleShortVersionString": "2.1",
-          "CFBundleVersion": "12"
+          "CFBundleShortVersionString": "2.2",
+          "CFBundleVersion": "13"
         }
       },
       "entitlements": {
@@ -180,8 +180,8 @@
           "NSExtension": {
             "NSExtensionPointIdentifier": "com.apple.deviceactivityui.report-extension"
           },
-          "CFBundleShortVersionString": "2.1",
-          "CFBundleVersion": "12"
+          "CFBundleShortVersionString": "2.2",
+          "CFBundleVersion": "13"
         }
       },
       "entitlements": {
@@ -194,8 +194,8 @@
   },
   "settings": {
     "base": {
-      "MARKETING_VERSION": "2.1",
-      "CURRENT_PROJECT_VERSION": "12"
+      "MARKETING_VERSION": "2.2",
+      "CURRENT_PROJECT_VERSION": "13"
     }
   }
 }
