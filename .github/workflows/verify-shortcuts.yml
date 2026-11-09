@@ -2,7 +2,7 @@ name: Sign and verify ready-to-import health shortcuts
 on:
   push:
     branches: [salute-shortcut-files]
-    paths: ['ShortcutFiles/**', '.github/workflows/verify-shortcuts.yml']
+    paths: ['ShortcutFiles/Unsigned/**', 'ShortcutFiles/verify_and_sign.py', '.github/workflows/verify-shortcuts.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,3 +20,4 @@ jobs:
           name: Comandi-Salute-Pronti
           path: shortcut-delivery
           retention-days: 14
+

@@ -1,0 +1,20 @@
+name: Verify downloaded signed shortcuts
+on:
+  push:
+    branches: [salute-shortcut-files]
+    paths: ['ShortcutFiles/Signed/**', 'ShortcutFiles/verify_downloaded.py', '.github/workflows/verify-downloaded.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15-intel
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Apple certificate chain, signature and unchanged actions
+        run: python3 ShortcutFiles/verify_downloaded.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Signed-shortcut-verification
+          path: shortcut-check/VERIFICA-COMANDI.json
