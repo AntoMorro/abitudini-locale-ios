@@ -83,6 +83,8 @@ struct WellnessPreferences: Codable {
     var rhrSource = ""
     var nocturnalHRV = false
     var shortcutNames = ["HRV nel quaderno","Riposo nel quaderno","Sonno nel quaderno"]
+    var sleepPlan:WellnessSleepPlan?
+    var widgetsEnabled:Bool?
 }
 struct WellnessArchive: Codable {
     var version = 1
@@ -93,7 +95,7 @@ struct WellnessArchive: Codable {
         guard version==1, records.count<=50_000, Set(records.map(\.id)).count==records.count,
               Set(records.map(\.key)).count==records.count, (4...12).contains(preferences.sleepGoal),
               preferences.shortcutNames.count==3, preferences.shortcutNames.allSatisfy({$0.count<=150}),
-              preferences.hrvSource.count<=160, preferences.rhrSource.count<=160, preferences.sleepSource.count<=160,
+              preferences.hrvSource.count<=160, preferences.rhrSource.count<=160, preferences.sleepSource.count<=160, preferences.sleepPlan?.valid != false,
               confirmedTrainingDays.count<=20_000, Set(confirmedTrainingDays).count==confirmedTrainingDays.count,
               confirmedTrainingDays.allSatisfy({$0.count==10 && $0.filter({$0 == "-"}).count==2}) else { throw WellnessError.invalid("Archivio Salute non valido o limite raggiunto.") }
         for r in records { try r.validate(now:now) }; return self
@@ -141,6 +143,12 @@ enum WellnessImport {
             if ["s","sec","second","seconds","secondo","secondi"].contains(s){return "s"}
         }
         if [.rhr,.heart].contains(type) && ["bpm","count/min","count/minute","battiti/min","battiti/minuto","beats/min","beats/minute"].contains(s){return "bpm"}
+        if type == .respiration && ["atti/min","atti/minuto","count/min","count/minute","breaths/min","breaths/minute","respiri/min","respirazioni/minuto"].contains(s){return "atti/min"}
+        if type == .oxygen && ["%","percent","percento","percentuale"].contains(s){return "%"}
+        if type == .temperature {
+            if ["°c","℃","celsius","degreecelsius","degc"].contains(s){return "°c"}
+            if ["°f","℉","fahrenheit","degreefahrenheit","degf"].contains(s){return "°f"}
+        }
         return s
     }
     static func number(_ raw:String,unit expected:String,type:WellnessMetric)throws->Double {
@@ -164,8 +172,14 @@ enum WellnessImport {
         let u=try unit(unitText,type:w.type)
         switch w.type {
         case .hrv: if ["s","sec"].contains(u) { value*=1000 } else if u != "ms" { throw WellnessError.invalid("HRV SDNN: usa ms o s; RMSSD non è intercambiabile con SDNN.") }
-        case .rhr,.heart: guard ["bpm","count/min","battiti/min"].contains(u) else { throw WellnessError.invalid("Frequenza: unità bpm richiesta.") }
+        case .rhr,.heart: if ["count/s","beats/s"].contains(u){value*=60}else if u != "bpm"{throw WellnessError.invalid("Frequenza: usa bpm o count/s espliciti.")}
+        case .respiration: if ["count/s","breaths/s","atti/s"].contains(u){value*=60}else if u != "atti/min"{throw WellnessError.invalid("Respirazione: usa atti/min, count/min o count/s espliciti.")}
         case .sleep,.workout: value=end.timeIntervalSince(start)/60
+        case .temperature:
+            if u=="°f"{value=(value-32)*5/9}else if u != "°c"{throw WellnessError.invalid("Temperatura assoluta: usa °C o °F, non uno scostamento dalla baseline.")}
+        case .oxygen:
+            if u=="fraction"{guard (0...1).contains(value) else{throw WellnessError.invalid("Frazione SpO₂ fuori intervallo.")};value*=100}
+            else if u != "%"{throw WellnessError.invalid("SpO₂: usa % oppure fraction esplicita.")}
         default: guard u==w.type.unit.lowercased().replacingOccurrences(of:" ",with:"") else { throw WellnessError.invalid("Unità richiesta: "+w.type.unit) }
         }
         if w.type != .sleep && w.type != .workout && w.value == nil && w.value64 == nil { throw WellnessError.invalid("Valore mancante.") }

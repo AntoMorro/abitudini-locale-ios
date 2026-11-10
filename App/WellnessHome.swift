@@ -58,6 +58,7 @@ struct WellnessHome:View {
         let todayH=h.first{Calendar.current.isDate($0.date,inSameDayAs:date)},todayR=r.first{Calendar.current.isDate($0.date,inSameDayAs:date)}
         let s=WellnessAnalysis.sleep(a,on:date)
         return VStack(alignment:.leading,spacing:18){
+            WellnessExplore(date:date)
             NavigationLink{ScrollView{WellnessRecovery(date:date).padding(20)}.background(Color(uiColor:.systemGroupedBackground)).navigationTitle("Recupero")}label:{WellnessRecoveryHero(readiness:WellnessAnalysis.readiness(a,on:date))}.buttonStyle(.plain).accessibilityIdentifier("wellnessRecovery")
             ViewThatFits(in:.horizontal){HStack(alignment:.top,spacing:12){hrvTile(h,todayH);restTile(r,todayR)};VStack(spacing:12){hrvTile(h,todayH);restTile(r,todayR)}}
             Button{page="Sonno"}label:{HStack(spacing:16){Image(systemName:"moon.stars.fill").font(.title).foregroundStyle(WellnessStyle.sleep).frame(width:52,height:60).background(WellnessStyle.sleep.opacity(0.1),in:RoundedRectangle(cornerRadius:18));VStack(alignment:.leading,spacing:5){Text("La tua notte").font(.subheadline.weight(.semibold));Text(s.seconds>0 ? WellnessFormat.hours(s.seconds):"Nessun dato").font(.system(.title2,design:.rounded,weight:.bold));Text(s.seconds>0 ? "Tocca per esplorare le fasi":"Importa i segmenti di sonno").font(.caption).foregroundStyle(.secondary)};Spacer();Image(systemName:"chevron.right").font(.caption).foregroundStyle(.secondary)}.wellnessSurface()}.buttonStyle(.plain).accessibilityIdentifier("wellnessSleepCard")
@@ -76,7 +77,7 @@ struct WellnessHome:View {
 struct WellnessToolsMenu:View {
     @Environment(\.dismiss) private var dismiss
     var body:some View {List{
-        Section("Dati"){NavigationLink("Importa file o testo JSON"){WellnessImportView()};NavigationLink("Campioni, fonti ed esportazione"){WellnessRecordsView()};NavigationLink("Comandi Rapidi e sincronizzazione"){WellnessShortcutsGuide()}.accessibilityIdentifier("wellnessToolsShortcuts")}
+        Section("Dati"){NavigationLink("Importa export.xml di Salute"){WellnessHealthXMLView()};NavigationLink("Importa file o testo JSON"){WellnessImportView()};NavigationLink("Campioni, fonti ed esportazione"){WellnessRecordsView()};NavigationLink("Comandi Rapidi e sincronizzazione"){WellnessShortcutsGuide()}.accessibilityIdentifier("wellnessToolsShortcuts")}
         Section("Personalizza"){NavigationLink("Preferenze Salute"){WellnessSettings()};NavigationLink("Allenamento e carico"){ScrollView{WellnessTraining(date:Date()).padding(20)}.navigationTitle("Allenamento")};NavigationLink("Metodi e limiti"){WellnessMethods()}}
     }.navigationTitle("Strumenti Salute").toolbar{ToolbarItem(placement:.confirmationAction){Button("Fine"){dismiss()}}}}
 }
@@ -135,6 +136,7 @@ struct WellnessSleepView:View {
                 ViewThatFits(in:.horizontal){HStack(spacing:22){duration(s);sleepRing(s,goal)};VStack(alignment:.leading,spacing:18){duration(s);sleepRing(s,goal)}}
                 if let start=s.start,let end=s.end{HStack{Label(start.formatted(date:.omitted,time:.shortened),systemImage:"bed.double");Spacer();Label(end.formatted(date:.omitted,time:.shortened),systemImage:"sunrise")}.font(.subheadline).foregroundStyle(.secondary)}
             }.wellnessSurface()
+            WellnessAdvancedSleep(date:date)
             if !s.timeline.isEmpty{
                 VStack(alignment:.leading,spacing:18){Text("Il viaggio nel sonno").font(.headline)
                     Chart(s.timeline){span in RectangleMark(xStart:.value("Inizio",span.start),xEnd:.value("Fine",span.end),y:.value("Fase",span.phase.title),height:.ratio(0.7)).foregroundStyle(WellnessStyle.phase(span.phase)).cornerRadius(3)}.frame(height:180).accessibilityLabel("Fasi del sonno importate nella notte")

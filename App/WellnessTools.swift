@@ -41,7 +41,8 @@ struct WellnessManual:View {
     @State private var rpe=5.0
     @State private var error=""
     var originalID:UUID?
-    init(record:WellnessRecord? = nil){
+    init(record:WellnessRecord? = nil,kind:WellnessMetric = .hrv){
+        _metric=State(initialValue:kind)
         originalID=record?.id
         if let r=record{_metric=State(initialValue:r.metric);_number=State(initialValue:String(r.value));_start=State(initialValue:r.start);_end=State(initialValue:r.end);_source=State(initialValue:r.source);_phase=State(initialValue:r.phase ?? .asleep);_name=State(initialValue:r.name);_rpe=State(initialValue:r.rpe ?? 5)}
     }

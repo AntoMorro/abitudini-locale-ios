@@ -81,4 +81,4 @@ struct FocusHabitActivity: Widget {
         }
     }
 }
-@main struct HabitWidgetBundle: WidgetBundle { var body: some Widget { ProgressHabitWidget(); HeatmapHabitWidget(); FocusHabitActivity() } }
+@main struct HabitWidgetBundle: WidgetBundle { var body: some Widget { ProgressHabitWidget(); HeatmapHabitWidget(); FocusHabitActivity(); RecoveryWellnessWidget(); SleepWellnessWidget(); VitalsWellnessWidget(); LoadWellnessWidget() } }

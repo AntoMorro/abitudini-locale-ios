@@ -4,6 +4,7 @@ import Foundation
 enum WellnessActions {
     static func ingest(_ records:[WellnessRecord]) throws {
         try HabitEnvironment.repository.update{db in var health=db.wellness ?? WellnessArchive();try health.merge(records);db.wellness=health}
+        if let db=try? HabitEnvironment.repository.read(){WellnessWidgetBridge.publish(db.wellness ?? WellnessArchive())}
         Task{@MainActor in NotificationCenter.default.post(name:.habitDataChanged,object:nil)}
     }
     static func sample(_ type:WellnessMetric,value:Double,date:Date,unit:String,source:String)throws->WellnessRecord {

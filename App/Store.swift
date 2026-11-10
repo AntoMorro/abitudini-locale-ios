@@ -37,7 +37,7 @@ import FamilyControls
         do { db = try repository.read(); readOnly = false }
         catch { readOnly = true; problem = "Archivio non leggibile. L’originale è conservato e i salvataggi sono sospesi: ripristina un backup. \(error.localizedDescription)" }
         if !readOnly { do { try configureProtection(); applyProtection() } catch { protectionStatus = error.localizedDescription; protectionReady = false } }
-        JournalPhoneBridge.shared.publish(db)
+        JournalPhoneBridge.shared.publish(db); WellnessWidgetBridge.publish(db.wellness ?? WellnessArchive())
     }
     @discardableResult func change(_ body: (inout HabitDatabase) throws -> Void, configure: Bool = false) -> Bool {
         guard !readOnly else { problem = "Ripristina un backup prima di modificare l’archivio."; return false }
@@ -49,7 +49,7 @@ import FamilyControls
             }
             if previousTimer != nil && db.timer == nil { LiveTimer.end() }
             if configure { try configureProtection() }
-            applyProtection(); WidgetCenter.shared.reloadAllTimelines(); syncReminders(); JournalPhoneBridge.shared.publish(db); return true
+            applyProtection(); WidgetCenter.shared.reloadAllTimelines(); syncReminders(); JournalPhoneBridge.shared.publish(db); WellnessWidgetBridge.publish(db.wellness ?? WellnessArchive()); return true
         } catch { problem = error.localizedDescription; return false }
     }
     func applyProtection() {

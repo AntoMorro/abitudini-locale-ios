@@ -43,4 +43,20 @@ final class QuadernoUITests:XCTestCase {
         if app.buttons["Inizia"].waitForExistence(timeout:8){app.buttons["Inizia"].tap()}
         app.buttons["Salute personale"].tap();XCTAssertTrue(app.buttons["wellnessRecovery"].waitForExistence(timeout:10));shot("18-Salute-Dark-DATI-FITTIZI")
     }
+
+    func testAdvancedWellnessScreens() {
+        continueAfterFailure=false
+        let app=XCUIApplication();app.launchArguments=["--ui-testing","--wellness-preview","--wellness-dark"];app.launch()
+        if app.buttons["Inizia"].waitForExistence(timeout:8){app.buttons["Inizia"].tap()}
+        XCTAssertTrue(app.buttons["Salute personale"].waitForExistence(timeout:15));app.buttons["Salute personale"].tap()
+        for (id,title,file) in [("insightStress","Stress e contesto","21-Stress-DATI-FITTIZI"),("insightLoad","Carico","22-Carico-DATI-FITTIZI"),("insightMonitor","Monitor salute","23-Monitor-DATI-FITTIZI"),("insightWidgets","Riepiloghi e widget","24-Riepiloghi-DATI-FITTIZI")] {
+            let link=app.buttons[id];XCTAssertTrue(link.waitForExistence(timeout:10));link.tap()
+            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout:10));shot(file)
+            if id=="insightMonitor"{app.buttons["vitalhrv"].tap();XCTAssertTrue(app.staticTexts["Mediana del giorno"].waitForExistence(timeout:8));shot("23b-Baseline-DATI-FITTIZI");app.navigationBars.buttons.element(boundBy:0).tap()}
+            app.navigationBars.buttons.element(boundBy:0).tap()
+        }
+        app.buttons["wellnessPageSonno"].tap();app.swipeUp();shot("25-Sonno-Avanzato-DATI-FITTIZI")
+        let plan=app.buttons["Personalizza il piano"];XCTAssertTrue(plan.waitForExistence(timeout:10));plan.tap()
+        XCTAssertTrue(app.navigationBars["Pianifica la notte"].waitForExistence(timeout:8));shot("25b-Piano-Sonno");app.buttons["Fine"].tap()
+    }
 }

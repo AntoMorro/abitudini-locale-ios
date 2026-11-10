@@ -100,7 +100,7 @@ extension HabitStore {
         change {db in db.theme=ProcessInfo.processInfo.arguments.contains("--wellness-dark") ? "dark":"light"}
         wellnessChange {a in
             a=WellnessArchive();let cal=Calendar.current,now=Date()
-            for i in 0..<30 {
+            for i in 0..<84 {
                 let day=cal.date(byAdding:.day,value:-i,to:cal.startOfDay(for:now))!
                 let time=min(day.addingTimeInterval(10*3600),now.addingTimeInterval(-60))
                 let h=48+Double((i*7)%19),r=54+Double((i*3)%8)
@@ -108,6 +108,15 @@ extension HabitStore {
                 let begin=day.addingTimeInterval(-3600),durations:[(WellnessPhase,Double)]=[(.core,100),(.deep,65),(.rem,45),(.awake,12),(.core,120),(.rem,65),(.core,35)]
                 var cursor=begin
                 for (phase,minutes) in durations {let end=cursor.addingTimeInterval(minutes*60);if end<now{samples.append(WellnessRecord(metric:.sleep,value:minutes,start:cursor,end:end,source:"Dati dimostrativi",phase:phase))};cursor=end}
+                samples += [
+                    WellnessRecord(metric:.respiration,value:15+Double(i%5)*0.2,start:time,end:time,source:"Dati dimostrativi"),
+                    WellnessRecord(metric:.oxygen,value:97+Double(i%3)*0.3,start:time,end:time,source:"Dati dimostrativi"),
+                    WellnessRecord(metric:.temperature,value:36.2+Double(i%4)*0.05,start:time,end:time,source:"Dati dimostrativi")
+                ]
+                let workoutStart=day.addingTimeInterval(12*3600)
+                if i%3 != 0 && workoutStart.addingTimeInterval(2400)<now{samples.append(WellnessRecord(metric:.workout,value:40,start:workoutStart,end:workoutStart.addingTimeInterval(2400),source:"Dati dimostrativi",name:"Camminata dimostrativa",rpe:Double(3+i%4)))}
+                a.confirmedTrainingDays.append(WellnessAnalysis.day(day))
+                if i==0{for j in 0..<96{let t=day.addingTimeInterval(Double(j)*900+60);if t<now{samples.append(WellnessRecord(metric:.heart,value:Double(61+(j*7)%31),start:t,end:t,source:"Dati dimostrativi"))}}}
                 try a.merge(samples)
             }
         }

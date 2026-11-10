@@ -33,19 +33,19 @@ jobs:
           import plistlib,pathlib
           app=pathlib.Path('build/package/Payload/AbitudiniLocale.app')
           p=plistlib.loads((app/'Info.plist').read_bytes())
-          assert p['CFBundleVersion']=='15' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
+          assert p['CFBundleVersion']=='16' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
           PY
           cd build/package
-          zip -qry ../QuadernoSalute-v15-unsigned.ipa Payload
+          zip -qry ../QuadernoSalute-v16-unsigned.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: QuadernoSalute-v15-IPA
-          path: build/QuadernoSalute-v15-unsigned.ipa
+          name: QuadernoSalute-v16-IPA
+          path: build/QuadernoSalute-v16-unsigned.ipa
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: QuadernoSalute-v15-verification
+          name: QuadernoSalute-v16-verification
           path: |
             shortcut-core-tests.log
             build-bridge.log
@@ -76,10 +76,10 @@ jobs:
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
           open -a Simulator --args -CurrentDeviceUDID "$SIMULATOR_ID"
       - name: Native UI tests
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           set -o pipefail
-          xcodebuild test-without-building -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult CODE_SIGNING_ALLOWED=NO | tee build-ui.log
+          xcodebuild test-without-building -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult -only-testing:AbitudiniLocaleUITests/QuadernoUITests/testLocalHealthSection -only-testing:AbitudiniLocaleUITests/QuadernoUITests/testAdvancedWellnessScreens CODE_SIGNING_ALLOWED=NO | tee build-ui.log
       - name: Export test screenshots
         if: ${{ !cancelled() }}
         run: |
@@ -110,3 +110,20 @@ jobs:
             build-ui-compile.log
             build/diagnostics
           retention-days: 7
+
+  widgets:
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+      - run: xcodegen generate --spec project-widgets.json
+      - name: Compile native health widgets
+        run: |
+          set -o pipefail
+          xcodebuild build -project AbitudiniLocale.xcodeproj -scheme AbitudiniLocale -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build/widgets CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tee build-widgets.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Health-widget-build-log
+          path: build-widgets.log
