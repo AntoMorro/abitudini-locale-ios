@@ -76,7 +76,7 @@ struct HabitSettings: View {
                 }
                 Section("Comandi Rapidi") { Text("Puoi aggiungere quantità, impostare il totale giornaliero e avviare o fermare timer. Le azioni sono disponibili anche per l’Action Button attraverso Comandi Rapidi. Per sorgenti esterne, le credenziali e le automazioni restano sotto il tuo controllo.").font(.caption) }
                 Section("Versione e copertura") {
-                    Text("Abitudini Locale 1.1 · interfaccia abitudini ispirata a HabitKit, blocchi ispirati a Habits First. App indipendente, non affiliata agli originali.").font(.caption)
+                    Text("Quaderno Locale \(Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "—") (\(Bundle.main.object(forInfoDictionaryKey:"CFBundleVersion") as? String ?? "—")) · journal, abitudini e analisi locali Salute.").font(.caption)
                     Text("Non sono inclusi account/sync cloud, blocchi per posizione o Bluetooth, NFC, integrazioni dirette AnkiWeb, Duolingo, KOReader, Chess.com e servizi multimediali. Il timer di studio non include cicli automatici pausa/lavoro. Le funzioni disponibili dipendono dal pacchetto e dai profili di firma.").font(.caption).foregroundStyle(.secondary)
                 }
             }.navigationTitle("impostazioni")

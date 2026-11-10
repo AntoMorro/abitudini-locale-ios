@@ -28,7 +28,7 @@ struct HabitRoot: View {
         .sheet(isPresented:$showingWellness){NavigationStack{WellnessHome().toolbar{Button("Fine"){showingWellness=false}}}}
         .onReceive(NotificationCenter.default.publisher(for: .habitDataChanged)) { _ in store.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in store.refresh() }
-        .onOpenURL { url in if let id = UUID(uuidString: url.lastPathComponent), let h = store.db.habits.first(where: { $0.id == id }) { store.routeHabit = h } }
+        .onOpenURL { url in if url.scheme == "abitudinilocale", url.host == "wellness" { showingWellness=true;return }; if let id = UUID(uuidString: url.lastPathComponent), let h = store.db.habits.first(where: { $0.id == id }) { store.routeHabit = h } }
         .sheet(item: $store.routeHabit) { HabitEditor(habit: $0) }
         .task { store.syncReminders(); JournalPhoneBridge.shared.start(store); JournalPrivacy.shared.update(enabled:store.journal.preferences.lock,active:true) }
     }
