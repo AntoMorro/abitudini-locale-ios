@@ -137,6 +137,7 @@ struct WellnessWire: Codable {
 }
 struct WellnessEnvelope: Codable { var version: Int; var records: [WellnessWire] }
 enum WellnessImport {
+    static let unknownSleepSource="Fonte non disponibile (Comandi Rapidi)"
     static func text(_ encoded:String?) throws -> String? {
         guard let encoded else{return nil}
         guard encoded.count<=8000,let data=Data(base64Encoded:encoded,options:.ignoreUnknownCharacters),let text=String(data:data,encoding:.utf8) else{throw WellnessError.invalid("Testo del comando non valido: atteso Base64 UTF-8.")}
@@ -197,7 +198,11 @@ enum WellnessImport {
         if w.type != .sleep && w.type != .workout && w.value == nil && w.value64 == nil { throw WellnessError.invalid("Valore mancante.") }
         let stageText=try text(w.stage64) ?? w.stage ?? "asleep"
         let phase: WellnessPhase? = w.type == .sleep ? try WellnessPhase.parse(stageText) : nil
-        let source=try text(w.source64) ?? w.source ?? "Comandi Rapidi"
+        let rawSource=try text(w.source64) ?? w.source
+        let source:String
+        if w.type == .sleep,(rawSource ?? "").trimmingCharacters(in:.whitespacesAndNewlines).isEmpty{
+            source=unknownSleepSource
+        }else{source=rawSource ?? "Comandi Rapidi"}
         let r=WellnessRecord(metric:w.type,value:value,start:start,end:end,source:source,phase:phase,externalID:w.externalID,name:w.name ?? "",rpe:w.rpe)
         try r.validate(now:now); return r
     }
@@ -217,7 +222,10 @@ enum WellnessImport {
         let envelope=try readEnvelope(data)
         return try envelope.records.enumerated().map{try checked($0.element,index:$0.offset,count:envelope.records.count,now:now)}
     }
-    struct ShortcutBatch {var records:[WellnessRecord];var futureSleepExcluded:Int}
+    struct ShortcutBatch {
+        var records:[WellnessRecord];var futureSleepExcluded:Int
+        var unknownSleepSourceCount:Int{records.filter{$0.metric == .sleep && $0.source==WellnessImport.unknownSleepSource}.count}
+    }
     static func shortcutBatch(_ data:Data,now:Date=Date())throws->ShortcutBatch{
         let envelope=try readEnvelope(data)
         var records:[WellnessRecord]=[],excluded=0

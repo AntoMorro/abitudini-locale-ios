@@ -31,7 +31,7 @@ final class WellnessSleepDatesTests:XCTestCase {
     }
     func testReversedEndAndBlankSourceHaveDistinctDiagnostics()throws{
         XCTAssertThrowsError(try WellnessImport.shortcutBatch(data([sleep(-1800,-3600)]),now:now)){XCTAssertTrue($0.localizedDescription.contains("ORDINE-DATE"))}
-        XCTAssertThrowsError(try WellnessImport.shortcutBatch(data([sleep(-3600,-1800,source:" ")]),now:now)){XCTAssertTrue($0.localizedDescription.contains("FONTE-VUOTA"))}
+        XCTAssertThrowsError(try WellnessImport.shortcutBatch(data([WellnessWire(type:.rhr,value:60,unit:"bpm",start:iso(now.addingTimeInterval(-3600)),source:" ")]),now:now)){XCTAssertTrue($0.localizedDescription.contains("FONTE-VUOTA"))}
     }
     func testMalformedDateAndLongSourceDoNotEchoPrivateValues()throws{
         var malformed=sleep(-3600,-1800);malformed.start="private-invalid-date"

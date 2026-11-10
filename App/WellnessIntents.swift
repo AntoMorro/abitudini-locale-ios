@@ -50,7 +50,7 @@ struct ImportWellnessJSONIntent:AppIntent {
     func perform()async throws->some IntentResult {
         let batch=try WellnessImport.shortcutBatch(Data(json.utf8))
         try WellnessActions.ingest(batch.records)
-        return .result(dialog:"Ricevuti \(batch.records.count) campioni validi. Esclusi \(batch.futureSleepExcluded) segmenti sonno con fine oltre 5 minuti nel futuro. Le date originali non sono state modificate.")
+        return .result(dialog:"Ricevuti \(batch.records.count) campioni validi. Esclusi \(batch.futureSleepExcluded) segmenti sonno con fine oltre 5 minuti nel futuro. Fonte non disponibile per \(batch.unknownSleepSourceCount) segmenti sonno. Le date originali non sono state modificate.")
     }
 }
 struct OpenWellnessIntent:AppIntent {

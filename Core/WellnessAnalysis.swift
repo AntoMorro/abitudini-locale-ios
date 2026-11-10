@@ -46,7 +46,13 @@ enum WellnessAnalysis {
         let all=records(a,metric:.sleep).filter{$0.start<end && $0.end>begin}
         let grouped=Dictionary(grouping:all,by: \.source)
         // A single source per night prevents Watch + another app from doubling sleep.
-        let origin=grouped.keys.sorted().max { l,r in
+        // Prefer an identified source when it contains actual sleep; never blend it
+        // with unattributed samples. An explicit preference is already filtered above.
+        let known=grouped.keys.filter{source in
+            source != WellnessImport.unknownSleepSource && grouped[source]!.contains{$0.phase?.sleeping==true}
+        }
+        let candidates=known.isEmpty ? Array(grouped.keys):Array(known)
+        let origin=candidates.sorted().max { l,r in
             let ls=unionSeconds(grouped[l]!.filter{$0.phase?.sleeping==true}.map{DateInterval(start:max(begin,$0.start),end:min(end,$0.end))})
             let rs=unionSeconds(grouped[r]!.filter{$0.phase?.sleeping==true}.map{DateInterval(start:max(begin,$0.start),end:min(end,$0.end))})
             return ls==rs ? l>r:ls<rs
