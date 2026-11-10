@@ -160,6 +160,23 @@ enum WellnessImport {
         if !suffix.isEmpty,try unit(suffix,type:type) != unit(expected,type:type){throw WellnessError.invalid("Unità nel valore e unità del campione diverse: controlla il comando.")}
         return n
     }
+    static func scalar(_ raw:Double,unit rawUnit:String,type:WellnessMetric)throws->Double {
+        var value=raw
+        let u=try unit(rawUnit,type:type)
+        switch type {
+        case .hrv: if ["s","sec"].contains(u) { value*=1000 } else if u != "ms" { throw WellnessError.invalid("HRV SDNN: usa ms o s; RMSSD non è intercambiabile con SDNN.") }
+        case .rhr,.heart: if ["count/s","beats/s"].contains(u){value*=60}else if u != "bpm"{throw WellnessError.invalid("Frequenza: usa bpm o count/s espliciti.")}
+        case .respiration: if ["count/s","breaths/s","atti/s"].contains(u){value*=60}else if u != "atti/min"{throw WellnessError.invalid("Respirazione: usa atti/min, count/min o count/s espliciti.")}
+        case .sleep,.workout: break
+        case .temperature:
+            if u=="°f"{value=(value-32)*5/9}else if u != "°c"{throw WellnessError.invalid("Temperatura assoluta: usa °C o °F, non uno scostamento dalla baseline.")}
+        case .oxygen:
+            if u=="fraction"{guard (0...1).contains(value) else{throw WellnessError.invalid("Frazione SpO₂ fuori intervallo.")};value*=100}
+            else if u != "%"{throw WellnessError.invalid("SpO₂: usa % oppure fraction esplicita.")}
+        default: guard u==type.unit.lowercased().replacingOccurrences(of:" ",with:"") else { throw WellnessError.invalid("Unità richiesta: "+type.unit) }
+        }
+        return value
+    }
     static func date(_ text: String) throws -> Date {
         let f=ISO8601DateFormatter();f.formatOptions=[.withInternetDateTime,.withFractionalSeconds]
         if let d=f.date(from:text) { return d }; f.formatOptions=[.withInternetDateTime]
@@ -169,19 +186,8 @@ enum WellnessImport {
         let start=try date(w.start), end=try w.end.map(date) ?? start
         let unitText=try text(w.unit64) ?? w.unit ?? w.type.unit
         var value=try text(w.value64).map{try number($0,unit:unitText,type:w.type)} ?? w.value ?? 0
-        let u=try unit(unitText,type:w.type)
-        switch w.type {
-        case .hrv: if ["s","sec"].contains(u) { value*=1000 } else if u != "ms" { throw WellnessError.invalid("HRV SDNN: usa ms o s; RMSSD non è intercambiabile con SDNN.") }
-        case .rhr,.heart: if ["count/s","beats/s"].contains(u){value*=60}else if u != "bpm"{throw WellnessError.invalid("Frequenza: usa bpm o count/s espliciti.")}
-        case .respiration: if ["count/s","breaths/s","atti/s"].contains(u){value*=60}else if u != "atti/min"{throw WellnessError.invalid("Respirazione: usa atti/min, count/min o count/s espliciti.")}
-        case .sleep,.workout: value=end.timeIntervalSince(start)/60
-        case .temperature:
-            if u=="°f"{value=(value-32)*5/9}else if u != "°c"{throw WellnessError.invalid("Temperatura assoluta: usa °C o °F, non uno scostamento dalla baseline.")}
-        case .oxygen:
-            if u=="fraction"{guard (0...1).contains(value) else{throw WellnessError.invalid("Frazione SpO₂ fuori intervallo.")};value*=100}
-            else if u != "%"{throw WellnessError.invalid("SpO₂: usa % oppure fraction esplicita.")}
-        default: guard u==w.type.unit.lowercased().replacingOccurrences(of:" ",with:"") else { throw WellnessError.invalid("Unità richiesta: "+w.type.unit) }
-        }
+        if w.type == .sleep || w.type == .workout {value=end.timeIntervalSince(start)/60}
+        else{value=try scalar(value,unit:unitText,type:w.type)}
         if w.type != .sleep && w.type != .workout && w.value == nil && w.value64 == nil { throw WellnessError.invalid("Valore mancante.") }
         let stageText=try text(w.stage64) ?? w.stage ?? "asleep"
         let phase: WellnessPhase? = w.type == .sleep ? try WellnessPhase.parse(stageText) : nil

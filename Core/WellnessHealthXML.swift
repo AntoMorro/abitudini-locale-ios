@@ -29,10 +29,12 @@ enum WellnessHealthXML {
     private final class Reader:NSObject,XMLParserDelegate {
         let since:Date;let metrics:Set<WellnessMetric>;let now:Date
         let formatter:DateFormatter
+        let coarseCutoff:String
         var records:[WellnessRecord]=[];var failure:Error?;var rootSeen=false
         init(since:Date,metrics:Set<WellnessMetric>,now:Date){
             self.since=since;self.metrics=metrics;self.now=now
             formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.calendar=Calendar(identifier:.gregorian);formatter.dateFormat="yyyy-MM-dd HH:mm:ss Z"
+            coarseCutoff=String(formatter.string(from:since.addingTimeInterval(-172800)).prefix(10))
         }
         func parser(_ parser:XMLParser,didStartElement name:String,namespaceURI:String?,qualifiedName:String?,attributes a:[String:String]){
             if Task.isCancelled{failure=CancellationError();parser.abortParsing();return}
@@ -43,7 +45,10 @@ enum WellnessHealthXML {
             else if name=="Workout"{metric = .workout}else{return}
             guard let metric,metrics.contains(metric) else{return}
             do{
-                guard let startText=a["startDate"],let start=formatter.date(from:startText) else{throw WellnessError.invalid("Data di un campione selezionato non valida.")}
+                guard let startText=a["startDate"] else{throw WellnessError.invalid("Data di un campione selezionato mancante.")}
+                // Fast skip for distant history; a two-day margin preserves timezone/DST edges.
+                if startText.count>=10 && String(startText.prefix(10))<coarseCutoff{return}
+                guard let start=formatter.date(from:startText) else{throw WellnessError.invalid("Data di un campione selezionato non valida.")}
                 guard start>=since else{return}
                 guard records.count<10_000 else{throw WellnessError.invalid("Oltre 10.000 campioni: scegli un periodo più breve o meno tipi. Nessun salvataggio parziale.")}
                 let end=a["endDate"].flatMap{formatter.date(from:$0)} ?? start
@@ -67,8 +72,8 @@ enum WellnessHealthXML {
                     case .steps:guard unit=="count" else{throw WellnessError.invalid("Passi XML: unità count richiesta.")};outputUnit="passi"
                     default:outputUnit=unit
                     }
-                    let iso=ISO8601DateFormatter();iso.formatOptions=[.withInternetDateTime,.withFractionalSeconds]
-                    record=try WellnessImport.record(WellnessWire(type:metric,value:value,unit:outputUnit,start:iso.string(from:start),end:iso.string(from:end),source:source),now:now)
+                    let normalized=try WellnessImport.scalar(value,unit:outputUnit,type:metric)
+                    record=WellnessRecord(metric:metric,value:normalized,start:start,end:end,source:source)
                 }
                 try record.validate(now:now);records.append(record)
             }catch{failure=error;parser.abortParsing()}

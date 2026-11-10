@@ -1,37 +1,35 @@
-# Quaderno Locale 2.1 — Salute in locale
+# Quaderno Locale 2.3 — Salute
+Journal, abitudini e Salute nello stesso archivio iPhone. Aggiornamento Base 16, stesso bundle local.abitudinilocale.habits. Prima esportare un backup; installare sopra l’app con stesso Apple ID e bundle ID in Sideloadly, senza disinstallare.
 
-Un unico archivio per journal, abitudini e Salute. Stesso bundle ID `local.abitudinilocale.habits`, stessa cartella Application Support/AbitudiniLocale/abitudini.json. Aggiornare sopra l’app precedente con stesso Apple ID e stessa configurazione di bundle ID in Sideloadly. Prima esportare un backup; non disinstallare.
+## Schermate
+- Stress e contesto: battito importato in finestre di 15 minuti, scostamento percentuale dalla baseline a riposo e contesto disponibile. Non misura stress psicologico, non è un monitor 24/7.
+- Carico: medie 7/28 giorni, rapporto descrittivo, storico 30/60/180/365 giorni con interruzioni dove i dati sono incompleti. Session-RPE: minuti × RPE. Confermare i giorni completi, inclusi i riposi.
+- Monitor salute: HRV, riposo, respirazione, SpO₂ e temperatura assoluta del polso. Baseline personale con almeno 14 giorni precedenti; una fonte mostrata per parametro. Nessuna previsione di malattia.
+- Sonno avanzato: fasi originali, quota REM+profondo osservata, veglia interna, intervalli di risveglio e piano organizzativo di sonno con sveglia e latenza configurabili.
+- Riepiloghi e widget: schede funzionanti nella Base. Quattro estensioni WidgetKit predisposte nella configurazione project-widgets.json; richiedono App Group e profili di firma compatibili. Condivisione disattivata inizialmente.
 
-## Salute
+Le fasi Principale/Core/Essenziale corrispondono allo stesso valore interno core. Le fasi sconosciute restano un errore: non vengono convertite in sonno generico. I giorni mancanti non valgono zero.
 
-Oggi → icona cuore oppure Altro → Apri Salute. La sezione comprende panoramica, recupero personale, sonno, trend e carico degli allenamenti. Non richiede HealthKit nella firma: Comandi Rapidi legge i dati dopo il consenso dell’utente e li passa alle azioni native di importazione. Il percorso precedente Salute → Comandi Rapidi → nota è stato confermato dall’utente; le nuove azioni strutturate richiedono collaudo sul dispositivo dopo l’aggiornamento.
+## Importazione senza costi di API
+I quattro comandi firmati già preparati importano HRV, riposo e sonno e li possono richiamare insieme. Non serve rifirmarli per questo aggiornamento. HRV/RHR e deduplicazione sono stati confermati dall’utente sul telefono; l’ultima correzione Principale e le nuove funzioni richiedono collaudo fisico.
 
-- HRV SDNN e frequenza a riposo con date originali, fonte e unità; importazioni ripetute aggiornano i campioni. HRV in secondi normalizzata in millisecondi, senza convertire SDNN in RMSSD.
-- Sonno per segmenti, fasi, durata, efficienza quando sono presenti intervalli a letto, obiettivo personale, deficit osservato e regolarità del risveglio. Risoluzione degli intervalli sovrapposti e una sola fonte per notte.
-- Grafici e statistiche a 7/28/90 giorni; correlazione HRV/riposo con numerosità e collegamenti descrittivi ai tag del diario. Giorni senza dati assenti dal grafico, mai riempiti con zero.
-- Baseline robusta dei 28 giorni precedenti, almeno 14 giorni appaiati; esclusione del giorno corrente e sospensione dell’indice in caso di fonti miste non selezionate. L’indice composito è una formula originale sperimentale spiegata nell’app, non un algoritmo Athlytic o una percentuale fisiologica validata.
-- Registro allenamenti manuale/JSON con session-RPE (minuti × RPE). Copertura dei giorni confermata dall’utente, includendo il riposo. Medie 7/28 giorni, rapporto, monotonia e strain soltanto con dati sufficienti. Nessuna previsione di infortuni.
-- Archivio campioni con modifica/eliminazione, selezione delle fonti, importazione JSON atomica con anteprima, esportazione e backup completo. Supporto generico opzionale per battito, respirazione, SpO₂, temperatura, peso, VO₂ max, passi ed energia: richiedono campioni espliciti nelle unità indicate.
+Per gli altri parametri: Salute Apple → profilo → Esporta tutti i dati sanitari → salva ZIP in File → tocca ZIP per estrarlo. Nell’app scegli Importa Salute XML, seleziona periodo/tipi e poi export.xml. Lettura in streaming sul dispositivo; massimo 10.000 campioni selezionati per lotto, anteprima e conferma. Nessun caricamento a server. L’XML completo può essere grande; puoi annullare la lettura. I formati clinici CDA e i percorsi GPS non vengono importati.
 
-## Comandi nell’app
+Gli allenamenti XML non inventano RPE o copertura: completali nel registro. SpO₂ HealthKit nell’XML usa una frazione e viene convertita esplicitamente in percentuale; non si applica questa convenzione alla generica importazione JSON con unità %. Temperatura assoluta in °C/°F; gli scostamenti dalla baseline non vengono usati al suo posto.
 
-Sono disponibili le azioni `Importa HRV nel quaderno`, `Importa frequenza a riposo nel quaderno`, `Importa segmento sonno nel quaderno` e `Importa dati Salute JSON nel quaderno`. L’app contiene una guida e pulsanti per aprire/eseguire i comandi salvati, con nomi configurabili. I tre comandi vanno creati una volta in Comandi Rapidi sull’iPhone: l’app non può installarli o concedersi i permessi in silenzio. Per i dettagli vedere SALUTE-COMANDI.md.
+## Metodi
+Il monitor usa mediana ± 2 dispersioni robuste, con 1,4826 × MAD e pavimenti numerici dichiarati nell’app. HRV nel dominio logaritmico. Esclude il giorno corrente e richiede almeno 14 giorni precedenti su 28. Sono fasce descrittive, non intervalli clinici.
 
-## Privacy e compatibilità
+Il piano sonno parte dall’obiettivo scelto e può aggiungere il deficit medio osservato delle ultime 7 notti importate, arrotondato a 15 minuti, massimo 60 minuti extra, con almeno 3 notti; totale massimo 12 ore. È una regola organizzativa originale e disattivabile, non una previsione del fabbisogno biologico.
 
-Nessun account sanitario, backend, analytics o API a pagamento. I calcoli sono sul dispositivo. Nessuna nuova libreria esterna. L’esecuzione di Comandi Rapidi può richiedere il telefono sbloccato. Non è sincronizzazione continua o lettura diretta HealthKit. Il backup completo contiene ora anche dati sanitari leggibili: salvarlo o condividerlo è una scelta esplicita dell’utente. I vecchi backup privi di Salute conservano la sezione già presente durante il ripristino; un backup completo che la contiene la sostituisce. Le pagine/abitudini restano compatibili; documentazione journal in README-JOURNAL.md.
+Le finestre cardiache vengono associate al sonno/allenamento soltanto se tutti i loro campioni rientrano negli intervalli noti. Il margine post-allenamento di 20 minuti è una convenzione di contesto. Non equivale a una misura clinica di stress o recupero.
 
-## Relazione con Athlytic
+## Privacy e limiti
+Nessun account sanitario, backend, analytics o API a pagamento. La Base non richiede HealthKit nella firma. Backup JSON leggibile con dati sanitari: condivisione e salvataggio in iCloud Drive restano scelte personali. Nuove preferenze opzionali, compatibili con i vecchi backup. Snapshot widget minimo e separato, protetto, solo dopo opt-in con App Group; la visibilità dei widget dipende da iOS.
 
-Ispirazione alle categorie pubbliche, con interfaccia, testi e formule indipendenti. Nessuna modifica di Athlytic, sblocco del suo PRO, uso dei suoi server o copia di algoritmi privati. La batteria/stress 24/7, sensori e GPS in tempo reale, battito dopo allenamento, allenamenti strutturati sul Watch, chat AI generativa, widget sanitari e firma/installazione Watch non sono resi equivalenti da questi importatori. Per questo la versione non viene presentata come replica integrale di ogni funzione PRO. L’app indica l’assenza dei dati necessari anziché simulare quei risultati.
+Non è una replica integrale di Athlytic o dei suoi algoritmi proprietari. Nessun rilevamento anticipato di malattia, stress fisiologico continuo, AI chat o allenamento live GPS viene dichiarato.
 
-## Metodi e fonti
+## Verifica
+Test con dati fittizi e build su GitHub. Anteprime esplicitamente contrassegnate, archivio del simulatore isolato; generatore escluso da Release. L’esito UI è separato dal successo della compilazione. Il pacchetto contiene VERIFICA-RELEASE.json con hash IPA e commit e lo ZIP dei sorgenti.
 
-- Session-RPE: Foster et al., 2001: https://pubmed.ncbi.nlm.nih.gov/11708692/
-- Confronto HRV con baseline individuale: studio con lnRMSSD (non SDNN): https://www.mdpi.com/2411-5142/6/4/102
-- Limiti ACWR: https://pubmed.ncbi.nlm.nih.gov/32125672/
-- Azioni Trova campioni: https://support.apple.com/en-mt/guide/shortcuts/apd3c845e881/ios
-- Avvio di un comando salvato: https://support.apple.com/en-euro/guide/shortcuts/apd624386f42/10.0/ios/27
-- Funzioni pubbliche Athlytic: https://athlyticapp.helpscoutdocs.com/article/13-getting-started
-
-Risultati effettivi di build e test in VERIFICA.json. Dati sintetici soltanto nei test; nessun valore sanitario personale pubblicato nel repository.
+Fonti: https://support.apple.com/it-it/108906 ; https://support.apple.com/guide/iphone/iph5ede58c3d/ios ; https://pubmed.ncbi.nlm.nih.gov/11708692/ ; https://aasm.org/resources/pdf/adultsleepdurationconsensus.pdf ; https://help.apple.com/xcode/mac/current/en.lproj/dev8dd3880fe.html .

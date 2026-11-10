@@ -37,10 +37,15 @@ jobs:
           PY
           cd build/package
           zip -qry ../QuadernoSalute-v16-unsigned.ipa Payload
+      - name: Verify release and archive sources
+        run: python3 scripts/package_health_release.py
       - uses: actions/upload-artifact@v4
         with:
           name: QuadernoSalute-v16-IPA
-          path: build/QuadernoSalute-v16-unsigned.ipa
+          path: |
+            build/QuadernoSalute-v16-unsigned.ipa
+            build/QuadernoSalute-Sorgenti-v16.zip
+            build/VERIFICA-RELEASE.json
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
