@@ -55,10 +55,16 @@ struct WellnessRecord: Codable, Identifiable, Equatable {
         return base+"|"+String(Int64((end.timeIntervalSince1970*1000).rounded()))+"|"+(phase?.rawValue ?? "")
     }
     func validate(now: Date = Date()) throws {
-        guard value.isFinite, start.timeIntervalSince1970.isFinite, end.timeIntervalSince1970.isFinite,
-              start >= Date(timeIntervalSince1970:0), end >= start, end <= now.addingTimeInterval(300),
-              !source.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty, source.count<=160, name.count<=200,
-              (externalID?.count ?? 0)<=200, rpe == nil || (rpe!.isFinite && (0...10).contains(rpe!)) else { throw WellnessError.invalid("Valori, fonte o date non validi. Nessuna importazione futura.") }
+        func failure(_ code:String,_ message:String)->WellnessError{.invalid("\(metric.title) [\(code)]: "+message)}
+        guard value.isFinite,start.timeIntervalSince1970.isFinite,end.timeIntervalSince1970.isFinite else{throw failure("NUMERO-DATA","Numero o data non finiti.")}
+        guard start>=Date(timeIntervalSince1970:0) else{throw failure("DATA-ORIGINE","Data precedente al 1970. Controlla il campo Data di inizio del comando.")}
+        guard end>=start else{throw failure("ORDINE-DATE","La fine precede l’inizio. Controlla i collegamenti Data di inizio e Data di fine.")}
+        guard end<=now.addingTimeInterval(300) else{throw failure("DATA-FUTURA","La fine supera l’ora attuale di oltre 5 minuti. Il campione non viene salvato.")}
+        guard !source.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty else{throw failure("FONTE-VUOTA","Il comando non ha fornito una fonte. Controlla il dettaglio Fonte del campione.")}
+        guard source.count<=160 else{throw failure("FONTE-LUNGA","Il campo Fonte supera 160 caratteri. Passa il dettaglio Fonte, non l’intero campione.")}
+        guard name.count<=200,(externalID?.count ?? 0)<=200 else{throw failure("TESTO-LUNGO","Nome o identificatore troppo lunghi.")}
+        guard rpe == nil || (rpe!.isFinite && (0...10).contains(rpe!)) else{throw failure("RPE","Lo sforzo percepito deve essere fra 0 e 10.")}
+
         let valid: Bool
         switch metric {
         case .hrv: valid = (0.1...1000).contains(value)
@@ -180,7 +186,7 @@ enum WellnessImport {
     static func date(_ text: String) throws -> Date {
         let f=ISO8601DateFormatter();f.formatOptions=[.withInternetDateTime,.withFractionalSeconds]
         if let d=f.date(from:text) { return d }; f.formatOptions=[.withInternetDateTime]
-        guard let d=f.date(from:text) else { throw WellnessError.invalid("Data ISO 8601 richiesta, con fuso orario: "+text) }; return d
+        guard let d=f.date(from:text) else { throw WellnessError.invalid("Formato data non riconosciuto: serve ISO 8601 con fuso orario. Nessuna data è stata modificata.") }; return d
     }
     static func record(_ w: WellnessWire, now: Date = Date()) throws -> WellnessRecord {
         let start=try date(w.start), end=try w.end.map(date) ?? start
@@ -195,14 +201,36 @@ enum WellnessImport {
         let r=WellnessRecord(metric:w.type,value:value,start:start,end:end,source:source,phase:phase,externalID:w.externalID,name:w.name ?? "",rpe:w.rpe)
         try r.validate(now:now); return r
     }
-    static func decode(_ data: Data, now: Date = Date()) throws -> [WellnessRecord] {
-        guard data.count<=5_000_000 else { throw WellnessError.invalid("File troppo grande: massimo 5 MB.") }
+    private static func readEnvelope(_ data:Data)throws->WellnessEnvelope{
+        guard data.count<=5_000_000 else{throw WellnessError.invalid("File troppo grande: massimo 5 MB.")}
         let envelope:WellnessEnvelope
-        do{envelope=try JSONDecoder().decode(WellnessEnvelope.self,from:data)}catch{
-            throw WellnessError.invalid("JSON del comando non valido. Usa il comando preconfigurato: l’azione richiede un testo JSON con version e records, non una misura o una data come ingresso diretto.")
+        do{envelope=try JSONDecoder().decode(WellnessEnvelope.self,from:data)}
+        catch{throw WellnessError.invalid("JSON del comando non valido: servono version e records.")}
+        guard envelope.version==1,!envelope.records.isEmpty,envelope.records.count<=10_000 else{throw WellnessError.invalid("Formato versione 1: servono da 1 a 10.000 campioni.")}
+        return envelope
+    }
+    private static func checked(_ wire:WellnessWire,index:Int,count:Int,now:Date)throws->WellnessRecord{
+        do{return try record(wire,now:now)}
+        catch{throw WellnessError.invalid("Campione \(index+1)/\(count): "+error.localizedDescription)}
+    }
+    static func decode(_ data:Data,now:Date=Date())throws->[WellnessRecord]{
+        let envelope=try readEnvelope(data)
+        return try envelope.records.enumerated().map{try checked($0.element,index:$0.offset,count:envelope.records.count,now:now)}
+    }
+    struct ShortcutBatch {var records:[WellnessRecord];var futureSleepExcluded:Int}
+    static func shortcutBatch(_ data:Data,now:Date=Date())throws->ShortcutBatch{
+        let envelope=try readEnvelope(data)
+        var records:[WellnessRecord]=[],excluded=0
+        for (index,wire) in envelope.records.enumerated(){
+            if wire.type == .sleep,let endText=wire.end,
+               let start=try? date(wire.start),let end=try? date(endText),
+               end>=start,end>now.addingTimeInterval(300){
+                excluded+=1;continue
+            }
+            records.append(try checked(wire,index:index,count:envelope.records.count,now:now))
         }
-        guard envelope.version==1,!envelope.records.isEmpty,envelope.records.count<=10_000 else { throw WellnessError.invalid("Formato versione 1: servono da 1 a 10.000 campioni.") }
-        return try envelope.records.map{try record($0,now:now)}
+        guard !records.isEmpty else{throw WellnessError.invalid("SONNO-FUTURO: esclusi \(excluded) segmenti con fine nel futuro. Nessun campione valido da salvare. Le date non sono state corrette automaticamente.")}
+        return .init(records:records,futureSleepExcluded:excluded)
     }
     static func export(_ archive: WellnessArchive) throws -> Data {
         let f=ISO8601DateFormatter();f.formatOptions=[.withInternetDateTime,.withFractionalSeconds]

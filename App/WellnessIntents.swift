@@ -47,7 +47,11 @@ struct ImportWellnessJSONIntent:AppIntent {
     static var title:LocalizedStringResource="Importa dati Salute JSON nel quaderno"
     static var description=IntentDescription("Importazione atomica di un JSON versione 1, massimo 10.000 campioni. Nessun dato viene inviato in rete.")
     @Parameter(title:"JSON") var json:String
-    func perform()async throws->some IntentResult {try WellnessActions.ingest(WellnessImport.decode(Data(json.utf8)));return .result()}
+    func perform()async throws->some IntentResult {
+        let batch=try WellnessImport.shortcutBatch(Data(json.utf8))
+        try WellnessActions.ingest(batch.records)
+        return .result(dialog:"Ricevuti \(batch.records.count) campioni validi. Esclusi \(batch.futureSleepExcluded) segmenti sonno con fine oltre 5 minuti nel futuro. Le date originali non sono state modificate.")
+    }
 }
 struct OpenWellnessIntent:AppIntent {
     static var title:LocalizedStringResource="Apri Salute nel quaderno"

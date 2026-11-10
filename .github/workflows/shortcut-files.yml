@@ -33,24 +33,24 @@ jobs:
           import plistlib,pathlib
           app=pathlib.Path('build/package/Payload/AbitudiniLocale.app')
           p=plistlib.loads((app/'Info.plist').read_bytes())
-          assert p['CFBundleVersion']=='16' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
+          assert p['CFBundleVersion']=='17' and p['CFBundleIdentifier']=='local.abitudinilocale.habits'
           PY
           cd build/package
-          zip -qry ../QuadernoSalute-v16-unsigned.ipa Payload
+          zip -qry ../QuadernoSalute-v17-unsigned.ipa Payload
       - name: Verify release and archive sources
         run: python3 scripts/package_health_release.py
       - uses: actions/upload-artifact@v4
         with:
-          name: QuadernoSalute-v16-IPA
+          name: QuadernoSalute-v17-IPA
           path: |
-            build/QuadernoSalute-v16-unsigned.ipa
-            build/QuadernoSalute-Sorgenti-v16.zip
+            build/QuadernoSalute-v17-unsigned.ipa
+            build/QuadernoSalute-Sorgenti-v17.zip
             build/VERIFICA-RELEASE.json
           retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: QuadernoSalute-v16-verification
+          name: QuadernoSalute-v17-verification
           path: |
             shortcut-core-tests.log
             build-bridge.log
