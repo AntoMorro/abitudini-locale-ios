@@ -29,4 +29,11 @@ final class FlowTests:XCTestCase {
         app.buttons["Programma"].tap();app.buttons["addSchedule"].tap();save("Cerimonia");shot("09-programma")
         app.navigationBars.buttons.element(boundBy:0).tap();app.buttons["Note e idee"].tap();app.buttons["addCollection"].tap();save("Idee per i fiori");shot("10-note")
     }
+    func testSharingEntryScreenWithoutContactingProduction() {
+        openTab("Organizza");app.buttons["openSharing"].tap()
+        XCTAssertTrue(app.textFields["sharingEmail"].waitForExistence(timeout:5))
+        XCTAssertTrue(app.secureTextFields["sharingPassword"].exists)
+        XCTAssertFalse(app.buttons["sharingLogin"].isEnabled)
+        shot("11-condivisione-accesso")
+    }
 }

@@ -54,6 +54,7 @@ jobs:
             WeddingPlanner/build/package/Promessa-Sorgenti.zip
             WeddingPlanner/build/package/VERIFICA.json
             WeddingPlanner/README.md
+            WeddingPlanner/CONDIVISIONE.md
           retention-days: 30
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}

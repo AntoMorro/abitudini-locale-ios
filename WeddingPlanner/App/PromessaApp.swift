@@ -34,6 +34,7 @@ struct DashboardView: View {
                     } else { Text("Il prossimo capitolo comincia qui.").font(.title3); NavigationLink("Scegli data e luogo") { SettingsView() }.buttonStyle(.bordered) }
                     if !store.db.settings.location.isEmpty { Label(store.db.settings.location,systemImage:"mappin.and.ellipse") }
                 }.frame(maxWidth:.infinity,alignment:.leading).padding(24).foregroundStyle(.white).background(LinearGradient(colors:[Palette.plum,Palette.rose],startPoint:.topLeading,endPoint:.bottomTrailing),in:RoundedRectangle(cornerRadius:28))
+                if store.db.cloud != nil {CloudStatusBanner()}
                 if store.readOnly { Text("Archivio in sola lettura. Apri Impostazioni per recuperare un backup.").foregroundStyle(.red) }
                 LazyVGrid(columns:[GridItem(.flexible()),GridItem(.flexible())],spacing:12) {
                     Metric(title:"Persone confermate",value:"\(store.db.people(.confirmed))",icon:"person.crop.circle.badge.checkmark")
@@ -84,4 +85,8 @@ struct OrganizeView: View {
             Section { Text("Funziona sul tuo iPhone anche offline. Se attivi la condivisione, i dati vengono sincronizzati tramite Firebase con i due account autorizzati. Nessun assistente automatico.").font(.footnote).foregroundStyle(.secondary) }
         }.navigationTitle("Organizza")
     }
+}
+struct CloudStatusBanner:View {
+    @EnvironmentObject var sharing:SharingService
+    var body:some View {NavigationLink {SharingView()} label:{HStack {Image(systemName:"person.2.fill");VStack(alignment:.leading,spacing:4) {Text("Promessa condivisa").font(.headline);Text(sharing.status).font(.caption)};Spacer();Image(systemName:"chevron.right")}.padding().foregroundStyle(sharing.conflicts.isEmpty ? Palette.plum:Color.orange).background(.background,in:RoundedRectangle(cornerRadius:18))}.accessibilityElement(children:.combine)}
 }

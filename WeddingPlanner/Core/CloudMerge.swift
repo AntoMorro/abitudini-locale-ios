@@ -19,6 +19,7 @@ struct CloudConflict: Identifiable, Equatable {
     var mutation: CloudMutation
     var remote: CloudRecord?
     var fields: [String]
+    var recovery = false
 }
 struct CloudState: Codable, Equatable {
     var accountID: String
@@ -28,8 +29,41 @@ struct CloudState: Codable, Equatable {
     var pending: [CloudMutation] = []
     var lastServerSync: Date?
     var ready = false
-    var conflicts: [CloudConflict] { pending.compactMap { CloudMerge.conflict($0,remote:records[$0.key]) } }
+    var viewRecords:[String:CloudRecord] {
+        var result = records
+        for mutation in pending {result[mutation.key] = CloudMerge.applying(mutation,to:result[mutation.key])}
+        return result
+    }
+    static func expenseKey(_ record:CloudRecord?) -> String? {
+        guard let record,record.kind == "payment",let fragment = record.fields["expenseID"],let id = try? JSONDecoder().decode(UUID.self,from:Data(fragment.utf8)) else {return nil}
+        return "expense_" + id.uuidString
+    }
+    var orphanExpenses:[String:CloudRecord] {
+        let visible = viewRecords;var result:[String:CloudRecord] = [:]
+        for payment in visible.values where !payment.deleted {
+            guard let key = Self.expenseKey(payment),visible[key] == nil || visible[key]?.deleted == true else {continue}
+            if var parent = visible[key] {parent.deleted = false;result[key] = parent}
+            else if let id = UUID(uuidString:String(key.dropFirst(8))),let data = try? JSONEncoder().encode(Expense(id:id,title:"Spesa eliminata da verificare")),let object = try? JSONSerialization.jsonObject(with:data) as? [String:Any] {
+                let fields = object.compactMapValues {value -> String? in guard let data = try? JSONSerialization.data(withJSONObject:value,options:[.fragmentsAllowed,.sortedKeys]) else {return nil};return String(decoding:data,as:UTF8.self)}
+                result[key] = CloudRecord(id:key,kind:"expense",fields:fields)
+            }
+        }
+        return result
+    }
+    var conflicts: [CloudConflict] {
+        var result = pending.compactMap {CloudMerge.conflict($0,remote:records[$0.key])}
+        for (key,parent) in orphanExpenses where !result.contains(where:{$0.id == key}) {
+            let mutation = CloudMutation(key:key,desired:parent,keys:Set(parent.fields.keys))
+            result.append(CloudConflict(mutation:mutation,remote:records[key],fields:["Pagamenti presenti su una spesa eliminata"],recovery:true))
+        }
+        return result
+    }
+    func canSend(_ mutation:CloudMutation) -> Bool {
+        if let parent = Self.expenseKey(mutation.desired),records[parent]?.deleted == true || (records[parent] == nil && ready) {return false}
+        return !conflicts.contains {$0.id == mutation.key}
+    }
     mutating func capture(before:WeddingArchive, after:WeddingArchive) throws {
+        guard before.settings.currency == after.settings.currency else {throw WeddingError.invalid("La valuta è fissa durante la condivisione, per non reinterpretare gli importi inseriti dal partner.")}
         let old = try CloudProjection.records(before), new = try CloudProjection.records(after)
         for key in Set(old.keys).union(new.keys).sorted() where old[key] != new[key] {
             let oldRecord = old[key], newRecord = new[key]
@@ -74,7 +108,17 @@ struct CloudState: Codable, Equatable {
         pending[i] = next
     }
     mutating func resolve(_ key:String, keepLocal:Bool) {
-        guard let i = pending.firstIndex(where:{$0.key == key}) else {return}
+        guard let i = pending.firstIndex(where:{$0.key == key}) else {
+            guard let recovered = orphanExpenses[key] else {return}
+            if keepLocal {pending.insert(CloudMutation(key:key,desired:recovered,keys:Set(recovered.fields.keys)),at:0)}
+            else {
+                for row in viewRecords.values where !row.deleted && Self.expenseKey(row) == key {
+                    pending.removeAll {$0.key == row.id}
+                    if let server = records[row.id],!server.deleted {pending.append(CloudMutation(key:row.id,base:server,keys:Set(row.fields.keys)))}
+                }
+            }
+            return
+        }
         if !keepLocal {pending.remove(at:i);return}
         pending[i].id = UUID()
         let remote = records[key]
@@ -142,8 +186,8 @@ enum CloudProjection {
     }
     private struct ExpenseLink:Codable {var expenseID:UUID}
     static func materialize(_ state:CloudState, reminders:Bool) throws -> WeddingArchive {
-        var records = state.records
-        for pending in state.pending {records[pending.key] = CloudMerge.applying(pending,to:records[pending.key])}
+        var records = state.viewRecords
+        for (id,recovered) in state.orphanExpenses {records[id] = recovered}
         var db = WeddingArchive();var payments:[(UUID,Payment)] = [];var order:[UUID] = []
         for r in records.values.filter({!$0.deleted}).sorted(by:{$0.id < $1.id}) {
             switch r.kind {

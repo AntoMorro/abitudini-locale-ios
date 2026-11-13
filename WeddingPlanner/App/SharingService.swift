@@ -4,6 +4,7 @@ import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
 import Security
+import Network
 
 @MainActor final class SharingService:ObservableObject {
     @Published private(set) var email = ""
@@ -22,6 +23,10 @@ import Security
     private var active = true
     private var retry:Task<Void,Never>?
     private var generation = 0
+    private let network = NWPathMonitor()
+    private var networkStarted = false
+    private var networkAvailable = true
+    private var serverConfirmed = false
     init(store:WeddingStore) {self.store = store}
     var account:User? {FirebaseApp.app() == nil ? nil:Auth.auth().currentUser}
     var configured:Bool {FirebaseApp.app() != nil}
@@ -30,7 +35,17 @@ import Security
     var isOwner:Bool {store?.db.cloud?.ownerID == account?.uid && account != nil}
     var connected:Bool {store?.db.cloud != nil}
     func start() {
-        guard !ProcessInfo.processInfo.arguments.contains("--ui-testing") else {return}
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+            if FirebaseApp.app() == nil {
+                let options = FirebaseOptions(googleAppID:"1:123456789:ios:abcdef123456",gcmSenderID:"123456789")
+                options.apiKey = "emulator-only-public-test-key";options.projectID = "demo-promessa";options.bundleID = Bundle.main.bundleIdentifier ?? "local.promessa.wedding"
+                FirebaseApp.configure(options:options)
+                Auth.auth().useEmulator(withHost:"127.0.0.1",port:9099)
+            }
+            status = "Solo su questo iPhone";return
+        }
+        #endif
         if FirebaseApp.app() == nil {
             guard let path = Bundle.main.path(forResource:"GoogleService-Info",ofType:"plist"),let options = FirebaseOptions(contentsOfFile:path) else {status = "Firebase non configurato";return}
             options.bundleID = Bundle.main.bundleIdentifier ?? "local.promessa.wedding"
@@ -46,9 +61,17 @@ import Security
                 Task {@MainActor in self?.email = user?.email ?? "";self?.verified = user?.isEmailVerified ?? false}
             }
         }
+        if !networkStarted {
+            networkStarted = true
+            network.pathUpdateHandler = {[weak self] path in Task {@MainActor in
+                guard let self else {return};self.networkAvailable = path.status == .satisfied
+                if !self.networkAvailable {self.serverConfirmed = false;self.updateStatus()} else if self.active {await self.resume()}
+            }}
+            network.start(queue:DispatchQueue(label:"Promessa.connection"))
+        }
         Task {await resume()}
         retry?.cancel();retry = Task {[weak self] in
-            while !Task.isCancelled {try? await Task.sleep(nanoseconds:30_000_000_000);guard !Task.isCancelled else {break};if let self,self.active {await self.flush()}}
+            while !Task.isCancelled {try? await Task.sleep(nanoseconds:30_000_000_000);guard !Task.isCancelled else {break};if let self,self.active,self.networkAvailable {if self.store?.db.cloud?.ready == false {await self.resume()} else {await self.flush()}}}
         }
     }
     func setActive(_ value:Bool) {active = value;if value {Task {await resume()}}}
@@ -96,6 +119,7 @@ import Security
     }
     func resume() async {
         guard active,configured,let user = account,user.isEmailVerified else {status = configured ? "Accedi e verifica l’email":"Firebase non configurato";return}
+        if !networkAvailable {listen();updateStatus();return}
         do {
             if let state = store?.db.cloud {
                 guard state.accountID == user.uid else {throw WeddingError.invalid("L’archivio locale appartiene a un altro accesso. Esporta un backup ed esci prima di cambiare account.")}
@@ -178,7 +202,9 @@ import Security
         recordsListener = room.collection("records").addSnapshotListener(includeMetadataChanges:true) {[weak self] snapshot,error in Task {@MainActor in
             guard let self,self.generation == myGeneration else {return}
             if let error {self.status = "Offline o accesso non disponibile";self.message = self.friendly(error);return}
-            guard let snapshot,!snapshot.metadata.isFromCache else {return}
+            guard let snapshot else {return}
+            guard !snapshot.metadata.isFromCache else {self.serverConfirmed = false;self.updateStatus();return}
+            self.serverConfirmed = true
             do {
                 var records:[String:CloudRecord] = [:]
                 for document in snapshot.documents {records[document.documentID] = try Self.record(document.documentID,document.data())}
@@ -214,13 +240,13 @@ import Security
         return try JSONDecoder().decode(WriteResult.self,from:data)
     }
     func flush() async {
+        guard networkAvailable else {updateStatus();return}
         guard active,!syncing,configured,let state = store?.db.cloud,account?.uid == state.accountID,account?.isEmailVerified == true else {return}
         syncing = true;defer {syncing = false;objectWillChange.send()}
         let myGeneration = generation
         do {
             while active,generation == myGeneration,let current = store?.db.cloud {
-                let blocked = Set(current.conflicts.map(\.id))
-                guard let mutation = current.pending.first(where:{!blocked.contains($0.key)}) else {break}
+                guard let mutation = current.pending.first(where:{current.canSend($0)}) else {break}
                 status = "Invio di \(current.pending.count) modifiche…"
                 let result = try await write(mutation,state:current)
                 guard generation == myGeneration else {return}
@@ -234,9 +260,11 @@ import Security
         } catch {status = "Offline / invio sospeso · \(pendingCount) modifiche al sicuro sul telefono"}
     }
     private func updateStatus() {
-        if !conflicts.isEmpty {status = "\(conflicts.count) voci da confrontare"}
+        if !connected {status = account == nil ? "Solo su questo iPhone":"Crea il matrimonio o accetta un invito"}
+        else if !networkAvailable {status = "Offline · \(pendingCount) modifiche conservate sul telefono"}
+        else if !conflicts.isEmpty {status = "\(conflicts.count) voci da confrontare"}
         else if pendingCount > 0 {status = "\(pendingCount) modifiche da inviare"}
-        else {status = "Aggiornato con il server"}
+        else {status = serverConfirmed ? "Aggiornato con il server":"In attesa di conferma dal server"}
         objectWillChange.send()
     }
     private func friendly(_ error:Error)->String {

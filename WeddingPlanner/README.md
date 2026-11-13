@@ -1,6 +1,6 @@
 # Promessa — wedding planner locale
 
-App nativa SwiftUI per iPhone, iOS 17 o successivo. Progetto separato: non sostituisce Quaderno, Abitudini o le altre app. Bundle ID `local.promessa.wedding`. Nessun account nell'app, costo di servizio, analytics, rete, chatbot o integrazione AI. Tutti i contenuti sono inseriti dall'utente. Il reel Instagram fornito non è risultato accessibile durante lo sviluppo: nessuna pretesa di averne riprodotto funzioni non osservate.
+App nativa SwiftUI per iPhone, iOS 17 o successivo. Progetto separato: non sostituisce Quaderno, Abitudini o le altre app. Bundle ID `local.promessa.wedding`. Uso locale senza account, oppure condivisione Firebase facoltativa con due accessi personali. Nessun analytics, chatbot o integrazione AI. Tutti i contenuti sono inseriti dall'utente. Il reel Instagram fornito non è risultato accessibile durante lo sviluppo: nessuna pretesa di averne riprodotto funzioni non osservate.
 
 ## Funzioni
 
@@ -16,11 +16,11 @@ App nativa SwiftUI per iPhone, iOS 17 o successivo. Progetto separato: non sosti
 
 ## Dati, sicurezza e limiti
 
-Riutilizza lo stack e il modello di archiviazione JSON validata/atomica con lock dei progetti precedenti. Il dominio matrimonio è indipendente perché dati e relazioni sono diversi. Nessuna libreria runtime esterna.
+Riutilizza lo stack e il modello di archiviazione JSON validata/atomica con lock dei progetti precedenti. Il dominio matrimonio è indipendente perché dati e relazioni sono diversi. Firebase Apple SDK 12.19.2 via Swift Package Manager, prodotti FirebaseAuth e FirebaseFirestore; nessun SDK Analytics o AI.
 
 Archivio privato in Application Support/Promessa/promessa.json; salvataggio atomico con protezione completa dei file iOS. Copia precedente in promessa.previous.json. Se il file è corrotto, l'app non lo sovrascrive: offre esportazione originale e ripristino. Un backup non valido non modifica l'archivio. Limite 20 MB e 50.000 voci, incluse le singole registrazioni di pagamento. Le versioni schema sconosciute sono rifiutate. Rimozione tavolo libera gli invitati; rimozione fornitore/attività/invitato conserva e scollega i record dipendenti.
 
-Le esportazioni includono dati personali, comprese allergie: scegliere con attenzione dove salvarle e con chi condividerle. È possibile scegliere iCloud Drive nel selettore File, ma non esiste sincronizzazione automatica né collaborazione tra dispositivi. Disinstallando l'app i dati privati vengono rimossi: esportare prima un backup. La cancellazione totale azzera l'archivio corrente ed elimina la copia di recupero precedente; i backup già esportati non sono cancellati.
+Le esportazioni includono dati personali, comprese allergie: scegliere con attenzione dove salvarle e con chi condividerle. È possibile scegliere iCloud Drive nel selettore File come destinazione dei backup manuali. La condivisione automatica facoltativa usa invece Firebase, descritta in CONDIVISIONE.md. Disinstallando l'app i dati privati vengono rimossi: esportare prima un backup. La cancellazione totale azzera l'archivio corrente ed elimina la copia di recupero precedente; i backup già esportati non sono cancellati.
 
 Promemoria: permesso iOS richiesto soltanto all'attivazione. Prossime 60 scadenze di attività aperte e saldi non pagati, aggiornate ad ogni modifica/apertura. Nessuna garanzia di avvisi se le notifiche sono disabilitate o la firma dell'app è scaduta. Dopo cambio fuso orario riaprire l'app. Categorie iniziali fisse; titoli attività e contenuti personalizzabili. Tavoli geometrici semplici: non è un CAD e non modella posti individuali numerati. PDF non implementato: gli export pratici disponibili sono CSV e JSON. Nessun widget o app Watch incluso in questa richiesta.
 
@@ -28,9 +28,9 @@ Interfaccia italiana, colori di sistema nelle aree di contenuto, testo dinamico,
 
 ## Compilazione
 
-Windows non include Xcode: il workflow `.github/workflows/promessa.yml` compila su `macos-15-intel` con Xcode 16.4. La matrice ufficiale Apple include deployment iOS 17 per questa versione: https://developer.apple.com/xcode/system-requirements . Il deployment target dell'app è 17.0; il binario non viene generato con requisiti inferiori alterando il plist.
+Windows non include Xcode: il workflow `.github/workflows/promessa.yml` compila su `macos-26` con Xcode 26.2. La matrice ufficiale Apple include deployment iOS 17 per questa versione: https://developer.apple.com/xcode/system-requirements . Il deployment target dell'app è 17.0; il binario non viene generato con requisiti inferiori alterando il plist.
 
-Da Mac con Xcode 16.4 e XcodeGen:
+Da Mac con Xcode 26.2 e XcodeGen:
 
 ```sh
 cd WeddingPlanner
@@ -55,3 +55,8 @@ Su GitHub aprire Actions → Promessa · Wedding planner. L'artefatto Promessa-I
 5. Avviare Promessa. Esportare periodicamente un backup, soprattutto prima di aggiornamenti o modifiche alla firma.
 
 La firma gratuita scade normalmente dopo 7 giorni; Sideloadly offre rinnovo automatico se configurato. Resta il limite di app firmate simultaneamente dell'account gratuito (già incontrato su questo dispositivo): Promessa è una nuova app e richiede un posto libero. Nessun pagamento richiesto dall'app. La firma usa i servizi Apple tramite Sideloadly; il funzionamento di Promessa resta offline. Documentazione verificata: https://sideloadly.io/ . Il test sul simulatore non verifica la firma personale né l'installazione sul telefono fisico.
+
+
+## Condivisione opzionale
+
+Dalla versione 1.1 è disponibile Organizza → Condividi con il partner. Consulta CONDIVISIONE.md per configurazione, privacy, accessi, offline e conflitti. I backup esportati non contengono credenziali o metadati di collegamento al cloud. Le preferenze notifiche restano personali al telefono. Durante la condivisione il ripristino e la cancellazione totale sono bloccati per evitare cancellazioni involontarie dei dati del partner; uscire prima dall'account.

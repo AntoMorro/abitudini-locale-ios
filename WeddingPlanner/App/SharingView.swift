@@ -74,20 +74,31 @@ struct SharingView:View {
 }
 struct ConflictView:View {
     @EnvironmentObject var sharing:SharingService
+    @EnvironmentObject var store:WeddingStore
     @Environment(\.dismiss) private var dismiss
     let conflict:CloudConflict
     @State private var keep:Bool?
     @State private var confirming = false
     var body:some View {
         List {
-            Section {Text("Avete modificato lo stesso campo o eliminato una voce mentre l’altro la modificava. Nessuna delle due versioni è stata sovrascritta automaticamente.");Text("Campi: " + conflict.fields.joined(separator:", ")).foregroundStyle(.orange)}
+            Section {Text(conflict.recovery ? "Una spesa è stata eliminata mentre esistono pagamenti collegati. La spesa e gli importi sono conservati nella copia locale e nei backup fino alla tua scelta. Puoi ripristinarli o confermarne l’eliminazione.":"Avete modificato lo stesso campo o eliminato una voce mentre l’altro la modificava. Nessuna delle due versioni è stata sovrascritta automaticamente.");Text("Campi: " + conflict.fields.map(label).joined(separator:", ")).foregroundStyle(.orange)}
             Section("La tua versione non inviata") {record(conflict.mutation.desired)}
             Section("Versione condivisa ricevuta") {record(conflict.remote?.deleted == true ? nil:conflict.remote)}
-            Section {Button("Mantieni le mie modifiche") {keep = true;confirming = true};Button("Usa la versione condivisa") {keep = false;confirming = true}}
+            Section {Button(conflict.recovery ? "Ripristina spesa e pagamenti":"Mantieni le mie modifiche") {keep = true;confirming = true};Button(conflict.recovery ? "Conferma eliminazione spesa e pagamenti":"Usa la versione condivisa") {keep = false;confirming = true}}
         }.navigationTitle("Confronta modifiche").confirmationDialog("Confermare la scelta per questa voce?",isPresented:$confirming,titleVisibility:.visible) {Button("Conferma") {sharing.resolve(conflict.id,keepLocal:keep ?? false);dismiss()}}
     }
     @ViewBuilder private func record(_ record:CloudRecord?) -> some View {
-        if let record {ForEach(record.fields.keys.sorted(),id:\.self) {key in VStack(alignment:.leading,spacing:4) {Text(key).font(.caption).foregroundStyle(.secondary);Text(display(record.fields[key] ?? "")).textSelection(.enabled)}}} else {Text("Voce eliminata")}
+        if let record {ForEach(record.fields.keys.sorted().filter {!["id","payments"].contains($0)},id:\.self) {key in VStack(alignment:.leading,spacing:4) {Text(label(key)).font(.caption).foregroundStyle(.secondary);Text(display(record.fields[key] ?? "",key:key)).textSelection(.enabled)}}} else {Text("Voce eliminata")}
     }
-    private func display(_ fragment:String)->String {if let text = try? JSONDecoder().decode(String.self,from:Data(fragment.utf8)) {return text};return fragment}
+    private func label(_ key:String)->String {let labels = ["name":"Nome","title":"Titolo","names":"Il vostro matrimonio","notes":"Note","text":"Testo","rsvp":"Risposta RSVP","diet":"Alimentazione","allergies":"Allergie","group":"Nucleo / gruppo","companions":"Accompagnatori","owner":"Responsabile","due":"Scadenza","start":"Inizio","date":"Data","planned":"Previsione","quote":"Preventivo","amount":"Importo","cost":"Costo indicativo","budget":"Budget","currency":"Valuta","category":"Categoria","status":"Stato","priority":"Priorità","capacity":"Capienza","location":"Luogo","minutes":"Durata in minuti","tableID":"Tavolo","vendorID":"Fornitore","expenseID":"Spesa","x":"Posizione orizzontale","y":"Posizione verticale","contact":"Contatto","service":"Servizio","categoryBudgets":"Budget per categoria"];return labels[key] ?? key}
+    private func display(_ fragment:String,key:String)->String {
+        let data = Data(fragment.utf8)
+        if ["planned","quote","amount","cost","budget"].contains(key),let value = try? JSONDecoder().decode(Int64.self,from:data) {return store.money(value)}
+        if ["due","start","date"].contains(key),let value = try? JSONDecoder().decode(Date.self,from:data) {return value.formatted(date:.abbreviated,time:.shortened)}
+        if let text = try? JSONDecoder().decode(String.self,from:data) {
+            if let id = UUID(uuidString:text) {switch key {case "tableID":return store.db.tables.first {$0.id == id}?.name ?? "Tavolo rimosso";case "vendorID":return store.db.vendors.first {$0.id == id}?.name ?? "Fornitore rimosso";case "expenseID":return store.db.expenses.first {$0.id == id}?.title ?? "Spesa rimossa";default:break}}
+            return text.isEmpty ? "—":text
+        }
+        return fragment
+    }
 }
