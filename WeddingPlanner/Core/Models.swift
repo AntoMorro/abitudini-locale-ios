@@ -55,6 +55,7 @@ struct Expense: Codable, Identifiable, Equatable {
     var committed: Int64 { quote ?? planned }
     var balance: Int64 { max(0, committed - paid) }
     var overpaid: Int64 { max(0, paid - committed) }
+    var allocated: Int64 { max(committed, paid) }
 }
 struct Guest: Codable, Identifiable, Equatable {
     var id = UUID(); var name = ""; var group = ""; var rsvp = RSVP.pending
@@ -82,7 +83,8 @@ struct WeddingArchive: Codable, Equatable {
     var committed: Int64 { expenses.reduce(0) { $0 + $1.committed } }
     var paid: Int64 { expenses.reduce(0) { $0 + $1.paid } }
     var outstanding: Int64 { expenses.reduce(0) { $0 + $1.balance } }
-    var available: Int64 { settings.budget - committed }
+    var allocated: Int64 { expenses.reduce(0) { $0 + $1.allocated } }
+    var available: Int64 { settings.budget - allocated }
     var totalSeats: Int { guests.reduce(0) { $0 + $1.seats } }
     var unassigned: [Guest] { guests.filter { $0.seats > 0 && $0.tableID == nil } }
     var completed: Int { tasks.filter { $0.status == .done }.count }
@@ -107,7 +109,14 @@ struct WeddingArchive: Codable, Equatable {
         func text(_ value: String) -> Bool { value.count <= 100_000 }
         func title(_ value: String) -> Bool { !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && value.count <= 500 }
         func date(_ value: Date?) -> Bool { value.map { $0.timeIntervalSince1970.isFinite && abs($0.timeIntervalSince1970) < 32_000_000_000 } ?? true }
-        let ids = tasks.map(\.id) + vendors.map(\.id) + expenses.map(\.id) + guests.map(\.id) + tables.map(\.id) + schedule.map(\.id) + notes.map(\.id) + expenses.flatMap { $0.payments.map(\.id) }
+        var ids: [UUID] = tasks.map(\.id)
+        ids.append(contentsOf:vendors.map(\.id))
+        ids.append(contentsOf:expenses.map(\.id))
+        ids.append(contentsOf:guests.map(\.id))
+        ids.append(contentsOf:tables.map(\.id))
+        ids.append(contentsOf:schedule.map(\.id))
+        ids.append(contentsOf:notes.map(\.id))
+        for expense in expenses { ids.append(contentsOf:expense.payments.map(\.id)) }
         try require(schema == 1, "Versione del backup non supportata.")
         try require(ids.count <= 50_000 && Set(ids).count == ids.count, "Archivio troppo grande o identificativi duplicati.")
         try require(title(settings.names) && text(settings.location) && date(settings.date) && ["EUR", "USD", "GBP", "CHF", "CAD", "AUD", "JPY"].contains(settings.currency) && money(settings.budget) && settings.categoryBudgets.allSatisfy { Category(rawValue: $0.key) != nil && money($0.value) }, "Impostazioni o budget non validi.")

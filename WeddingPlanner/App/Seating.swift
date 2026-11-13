@@ -5,7 +5,7 @@ struct SeatingView:View {
     @State private var plan = true; @State private var edit:EditRequest?; @State private var selected:WeddingTable?
     var body:some View {
         List {
-            Section {Picker("Vista",selection:$plan) {Text("Pianta").tag(true);Text("Elenco").tag(false)}.pickerStyle(.segmented); Text("\(store.db.totalSeats) posti richiesti · \(store.db.tables.reduce(0) {$0 + $1.capacity}) posti totali").font(.headline); Text("\(store.db.unassigned.reduce(0) {$0 + $1.seats}) persone senza tavolo").foregroundStyle(store.db.unassigned.isEmpty ? .secondary : .orange) }
+            Section {Picker("Vista",selection:$plan) {Text("Pianta").tag(true);Text("Elenco").tag(false)}.pickerStyle(.segmented); Text("\(store.db.totalSeats) posti richiesti · \(store.db.tables.reduce(0) {$0 + $1.capacity}) posti totali").font(.headline); Text("\(store.db.unassigned.reduce(0) {$0 + $1.seats}) persone senza tavolo").foregroundStyle(store.db.unassigned.isEmpty ? Color.secondary : Color.orange) }
             if store.db.tables.isEmpty {EmptyHint(title:"Disegna la vostra sala",text:"Aggiungi il primo tavolo con +, poi assegna gli invitati.",icon:"square.grid.3x3")}
             if plan && !store.db.tables.isEmpty {
                 Section("Trascina i tavoli · tocca per assegnare") {

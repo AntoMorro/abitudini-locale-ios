@@ -22,6 +22,10 @@ import UniformTypeIdentifiers
     func restore(_ data: Data) -> Bool {
         do { db = try repository.restore(data); readOnly = false; refreshReminders(); return true } catch { self.error = "Backup non importato. \(error.localizedDescription)"; return false }
     }
+    func erase() -> Bool {
+        guard !readOnly else { return false }
+        do { db = try repository.erase(); refreshReminders(); return true } catch { self.error = error.localizedDescription; return false }
+    }
     func backup() throws -> Data {
         if readOnly { return try Data(contentsOf: repository.file) }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]; return try encoder.encode(db)
