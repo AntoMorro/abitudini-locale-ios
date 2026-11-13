@@ -42,13 +42,15 @@ import UniformTypeIdentifiers
         let encoder = JSONEncoder();encoder.outputFormatting = [.prettyPrinted,.sortedKeys];var exported = db;exported.cloud = nil;return try encoder.encode(exported)
     }
     func cloudUpdate(_ body:(inout WeddingArchive)throws->Void) throws {db = try repository.update(body);refreshReminders()}
-    func clearSharedLocal() throws {db = try repository.erase();refreshReminders()}
+    func clearSharedLocal() throws {db = try repository.erase(preservePersonalBackup:true);refreshReminders()}
     func connect(_ state:CloudState, uploadLocal:Bool) throws {
         guard !readOnly else {throw WeddingError.invalid("Ripristina prima l’archivio locale.")}
         // Save a portable backup before the first link. It never contains tokens or sync metadata.
         let backupData = try backup()
         try FileManager.default.createDirectory(at:repository.directory,withIntermediateDirectories:true)
-        try backupData.write(to:repository.directory.appendingPathComponent("prima-condivisione.json"),options:[.atomic,.completeFileProtection])
+        let personalBackup = repository.directory.appendingPathComponent("prima-condivisione.json")
+        let meaningful = !db.tasks.isEmpty || !db.guests.isEmpty || !db.vendors.isEmpty || !db.expenses.isEmpty || !db.notes.isEmpty || !db.schedule.isEmpty || !db.tables.isEmpty || db.settings != WeddingSettings()
+        if meaningful || !FileManager.default.fileExists(atPath:personalBackup.path) {try backupData.write(to:personalBackup,options:[.atomic,.completeFileProtection])}
         try cloudUpdate {archive in
             var newState = state
             if uploadLocal {let records = try CloudProjection.records(archive);newState.pending = records.values.sorted {$0.id < $1.id}.map {CloudMutation(key:$0.id,desired:$0,keys:Set($0.fields.keys))}}

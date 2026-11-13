@@ -132,14 +132,14 @@ import Security
             let (db,user) = try requireAccount()
             let cleaned = code.trimmingCharacters(in:.whitespacesAndNewlines).lowercased()
             guard cleaned.count == 64,cleaned.allSatisfy({$0.isHexDigit}) else {throw WeddingError.invalid("Codice invito non valido.")}
-            let profile = try await db.collection("profiles").document(user.uid).getDocument(source:.server)
-            guard profile.data()?["weddingID"] == nil else {throw WeddingError.invalid("Il tuo account è già collegato a un matrimonio. Premi Aggiorna accesso.")}
             let result: [String:String] = try await withCheckedThrowingContinuation { continuation in
                 db.runTransaction({transaction,errorPointer -> Any? in
                     do {
                         let ref = db.collection("invites").document(cleaned)
                         let invite = try transaction.getDocument(ref)
+                        let profile = try transaction.getDocument(db.collection("profiles").document(user.uid))
                         guard let values = invite.data(),let id = values["weddingID"] as? String,let owner = values["ownerID"] as? String else {throw WeddingError.invalid("Invito non disponibile.")}
+                        guard profile.data()?["weddingID"] == nil || profile.data()?["weddingID"] as? String == id else {throw WeddingError.invalid("Questo account è già collegato a un altro matrimonio.")}
                         transaction.updateData(["members":FieldValue.arrayUnion([user.uid])],forDocument:db.collection("weddings").document(id))
                         transaction.updateData(["usedBy":user.uid],forDocument:ref)
                         transaction.setData(["weddingID":id],forDocument:db.collection("profiles").document(user.uid))
@@ -157,6 +157,10 @@ import Security
         generation += 1;recordsListener?.remove();recordsListener = nil;roomListener?.remove();roomListener = nil
         if connected {try store?.clearSharedLocal()}
         try Auth.auth().signOut();email = "";verified = false;invitation = "";status = "Solo su questo iPhone"
+    }
+    func revokePartner() async {
+        guard !busy,isOwner else {return};busy = true;defer {busy = false}
+        do {let (db,user) = try requireAccount();guard let state = store?.db.cloud else {return};try await db.collection("weddings").document(state.weddingID).updateData(["members":[user.uid],"inviteID":""]);invitation = "";message = "Accesso del partner revocato sul server. Le copie già scaricate, i backup e i dati offline sul suo dispositivo non possono essere cancellati da remoto."} catch {message = friendly(error)}
     }
     func resolve(_ key:String,keepLocal:Bool) {
         do {try store?.cloudUpdate {archive in guard var state = archive.cloud else {return};state.resolve(key,keepLocal:keepLocal);archive = try CloudProjection.materialize(state,reminders:archive.settings.reminders)};localChanged()} catch {message = friendly(error)}

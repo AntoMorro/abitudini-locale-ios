@@ -45,12 +45,14 @@ final class WeddingRepository {
         let archive = try Self.decode(data)
         return try locked { try saveUnlocked(archive); return archive }
     }
-    func erase() throws -> WeddingArchive {
+    func erase(preservePersonalBackup:Bool = false) throws -> WeddingArchive {
         try locked {
             let empty = WeddingArchive()
             try saveUnlocked(empty)
             let previous = directory.appendingPathComponent("promessa.previous.json")
             if FileManager.default.fileExists(atPath:previous.path) { try FileManager.default.removeItem(at:previous) }
+            let preShare = directory.appendingPathComponent("prima-condivisione.json")
+            if !preservePersonalBackup && FileManager.default.fileExists(atPath:preShare.path) {try FileManager.default.removeItem(at:preShare)}
             return empty
         }
     }

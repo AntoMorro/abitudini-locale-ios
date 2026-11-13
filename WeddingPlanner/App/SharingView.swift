@@ -5,6 +5,7 @@ struct SharingView:View {
     @EnvironmentObject var sharing:SharingService
     @State private var email = "",password = "",partnerEmail = "",code = ""
     @State private var register = false,creating = false,joining = false,leaving = false
+    @State private var revoking = false
     var body:some View {
         List {
             Section {
@@ -42,6 +43,7 @@ struct SharingView:View {
                             if sharing.isOwner {
                                 TextField("Email personale del partner",text:$partnerEmail).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
                                 Button("Crea / rinnova invito privato") {Task {await sharing.makeInvitation(to:partnerEmail)}}.disabled(partnerEmail.isEmpty || sharing.busy || sharing.memberCount >= 2)
+                                if sharing.memberCount > 1 {Button("Revoca accesso del partner",role:.destructive) {revoking = true}.disabled(sharing.busy)}
                                 if !sharing.invitation.isEmpty {Text(sharing.invitation).font(.caption.monospaced()).textSelection(.enabled);ShareLink(item:sharing.invitation) {Label("Condividi codice invito",systemImage:"square.and.arrow.up")};Text("Solo l’email indicata e verificata può accettarlo, una sola volta entro 48 ore. Un nuovo invito invalida il precedente.").font(.caption).foregroundStyle(.secondary)}
                             }
                         }
@@ -60,6 +62,7 @@ struct SharingView:View {
         .alert("Condividere questo archivio?",isPresented:$creating) {Button("Annulla",role:.cancel) {};Button("Condividi") {Task {await sharing.createWedding()}}} message:{Text("I dati presenti su questo iPhone verranno caricati su Firebase. Il partner potrà leggerli e modificarli dopo un tuo invito. Un backup locale viene conservato prima del collegamento.")}
         .alert("Accettare il matrimonio condiviso?",isPresented:$joining) {Button("Annulla",role:.cancel) {};Button("Accetta e collega") {Task {await sharing.join(code:code)}}} message:{Text("La vista corrente sarà sostituita dai dati condivisi, senza unire due matrimoni. Prima viene salvato un backup dell’archivio locale. Entrambi potrete modificare gli stessi dati.")}
         .alert("Uscire dall’account?",isPresented:$leaving) {Button("Annulla",role:.cancel) {};Button(sharing.pendingCount > 0 ? "Esci e scarta modifiche non inviate":"Esci",role:.destructive) {do {try sharing.signOut(discardPending:true)} catch {sharing.message = error.localizedDescription}}} message:{Text(sharing.pendingCount > 0 ? "Ci sono \(sharing.pendingCount) modifiche non inviate: uscire le scarta da questo telefono. Esporta prima un backup dalle Impostazioni.":"La copia condivisa locale sarà rimossa; i dati sul server non verranno cancellati.")}
+        .alert("Revocare l’accesso del partner?",isPresented:$revoking) {Button("Annulla",role:.cancel) {};Button("Revoca",role:.destructive) {Task {await sharing.revokePartner()}}} message:{Text("Il partner non potrà più leggere o modificare i dati sul server. Questa azione non cancella copie offline e backup già in suo possesso. Potrai invitarlo nuovamente.")}
         .alert("Condivisione",isPresented:Binding(get:{sharing.message != nil},set:{if !$0 {sharing.message = nil}})) {Button("OK") {sharing.message = nil}} message:{Text(sharing.message ?? "")}
     }
 }

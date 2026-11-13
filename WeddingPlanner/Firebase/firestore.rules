@@ -46,6 +46,10 @@ service cloud.firestore {
           && request.resource.data.inviteID is string
           && request.resource.data.inviteID.size() <= 64
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ready','inviteID']))
+        || (resource.data.ownerID == request.auth.uid
+          && request.resource.data.members == [request.auth.uid]
+          && request.resource.data.inviteID == ''
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members','inviteID']))
         || acceptedInvite(wid));
       match /records/{rid} {
         allow read: if member(wid);
