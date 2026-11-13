@@ -2,7 +2,8 @@ import SwiftUI
 
 @main struct PromessaApp: App {
     @StateObject private var store = WeddingStore()
-    var body: some Scene { WindowGroup { RootView().environmentObject(store).tint(Palette.plum).environment(\.locale,Locale(identifier:"it_IT")) } }
+    @Environment(\.scenePhase) private var scenePhase
+    var body: some Scene { WindowGroup { RootView().environmentObject(store).environmentObject(store.sharing).tint(Palette.plum).environment(\.locale,Locale(identifier:"it_IT")).onAppear {store.sharing.start()}.onChange(of:scenePhase) {_,phase in store.sharing.setActive(phase == .active)} } }
 }
 struct RootView: View {
     @EnvironmentObject var store: WeddingStore
@@ -79,7 +80,8 @@ struct OrganizeView: View {
                 NavigationLink { CollectionView(kind:.note) } label:{Label("Note e idee",systemImage:"note.text")}
             }
             Section { NavigationLink { GlobalSearchView() } label:{Label("Cerca ovunque",systemImage:"magnifyingglass")}; NavigationLink { SettingsView() } label:{Label("Impostazioni e backup",systemImage:"gearshape")} }
-            Section { Text("Tutto sul tuo iPhone. Nessun account, servizio esterno o assistente automatico.").font(.footnote).foregroundStyle(.secondary) }
+            Section {NavigationLink {SharingView()} label:{Label("Condividi con il partner",systemImage:"person.2.badge.gearshape")}.accessibilityIdentifier("openSharing")}
+            Section { Text("Funziona sul tuo iPhone anche offline. Se attivi la condivisione, i dati vengono sincronizzati tramite Firebase con i due account autorizzati. Nessun assistente automatico.").font(.footnote).foregroundStyle(.secondary) }
         }.navigationTitle("Organizza")
     }
 }

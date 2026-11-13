@@ -10,11 +10,11 @@ concurrency:
   group: promessa-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 env:
-  DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+  DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
 jobs:
   build:
-    runs-on: macos-15-intel
-    timeout-minutes: 25
+    runs-on: macos-26
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: WeddingPlanner
@@ -31,7 +31,7 @@ jobs:
       - name: Native iPhone release
         run: |
           set -o pipefail
-          xcodebuild build -project Promessa.xcodeproj -scheme Promessa -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO 2>&1 | tee build-device.log
+          xcodebuild build -project Promessa.xcodeproj -scheme Promessa -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -clonedSourcePackagesDirPath build/SourcePackages -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO 2>&1 | tee build-device.log
       - name: Package IPA and sources
         run: |
           mkdir -p build/package/Payload
@@ -61,8 +61,8 @@ jobs:
           name: Promessa-build-logs
           path: WeddingPlanner/*.log
   ui:
-    runs-on: macos-15-intel
-    timeout-minutes: 40
+    runs-on: macos-26
+    timeout-minutes: 50
     defaults:
       run:
         working-directory: WeddingPlanner
@@ -76,7 +76,7 @@ jobs:
       - name: Compile UI tests
         run: |
           set -o pipefail
-          xcodebuild build-for-testing -project Promessa.xcodeproj -scheme Promessa -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath build/simulator CODE_SIGNING_ALLOWED=NO 2>&1 | tee build-ui-compile.log
+          xcodebuild build-for-testing -project Promessa.xcodeproj -scheme Promessa -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -clonedSourcePackagesDirPath build/SourcePackages -derivedDataPath build/simulator CODE_SIGNING_ALLOWED=NO 2>&1 | tee build-ui-compile.log
       - name: Boot simulator
         run: |
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
@@ -85,7 +85,7 @@ jobs:
         timeout-minutes: 15
         run: |
           set -o pipefail
-          xcodebuild test-without-building -project Promessa.xcodeproj -scheme Promessa -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult CODE_SIGNING_ALLOWED=NO 2>&1 | tee ui-tests.log
+          xcodebuild test-without-building -project Promessa.xcodeproj -scheme Promessa -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -clonedSourcePackagesDirPath build/SourcePackages -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult CODE_SIGNING_ALLOWED=NO 2>&1 | tee ui-tests.log
       - name: Export screenshots
         if: ${{ !cancelled() }}
         run: |
@@ -98,3 +98,33 @@ jobs:
           path: |
             WeddingPlanner/build/screenshots
             WeddingPlanner/*ui*.log
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: WeddingPlanner/Firebase
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: WeddingPlanner/Firebase/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Rules emulator tests
+        run: |
+          set -o pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test 2>&1 | tee rules-tests.log
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: Promessa-Firebase-security
+          path: |
+            WeddingPlanner/Firebase/rules-tests.log
+            WeddingPlanner/Firebase/*debug.log

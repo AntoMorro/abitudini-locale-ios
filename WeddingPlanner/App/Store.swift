@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
     @Published var error: String?
     @Published private(set) var readOnly = false
     private let repository: WeddingRepository
+    lazy var sharing = SharingService(store:self)
     init() {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let testing = ProcessInfo.processInfo.arguments.contains("--ui-testing")
@@ -17,18 +18,42 @@ import UniformTypeIdentifiers
     }
     @discardableResult func change(_ body: (inout WeddingArchive) throws -> Void) -> Bool {
         guard !readOnly else { error = "Archivio in sola lettura: ripristina un backup valido."; return false }
-        do { db = try repository.update(body); refreshReminders(); return true } catch { self.error = error.localizedDescription; return false }
+        do {
+            db = try repository.update { archive in
+                let before = archive
+                try body(&archive)
+                _ = try archive.validated()
+                if var state = before.cloud {try state.capture(before:before,after:archive);archive.cloud = state}
+            }
+            refreshReminders();sharing.localChanged();return true
+        } catch { self.error = error.localizedDescription; return false }
     }
     func restore(_ data: Data) -> Bool {
-        do { db = try repository.restore(data); readOnly = false; refreshReminders(); return true } catch { self.error = "Backup non importato. \(error.localizedDescription)"; return false }
+        guard db.cloud == nil else {error = "Prima del ripristino esci dalla condivisione ed esporta un backup. Un ripristino non deve sovrascrivere i dati del tuo partner.";return false}
+        do {var candidate = try WeddingRepository.decode(data);candidate.cloud = nil;db = try repository.restore(JSONEncoder().encode(candidate));readOnly = false;refreshReminders();return true} catch {self.error = "Backup non importato. \(error.localizedDescription)";return false}
     }
     func erase() -> Bool {
+        guard db.cloud == nil else {error = "Esci prima dalla condivisione. Questa cancellazione riguarda solo i dati locali, non quelli del partner.";return false}
         guard !readOnly else { return false }
         do { db = try repository.erase(); refreshReminders(); return true } catch { self.error = error.localizedDescription; return false }
     }
     func backup() throws -> Data {
         if readOnly { return try Data(contentsOf: repository.file) }
-        let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]; return try encoder.encode(db)
+        let encoder = JSONEncoder();encoder.outputFormatting = [.prettyPrinted,.sortedKeys];var exported = db;exported.cloud = nil;return try encoder.encode(exported)
+    }
+    func cloudUpdate(_ body:(inout WeddingArchive)throws->Void) throws {db = try repository.update(body);refreshReminders()}
+    func clearSharedLocal() throws {db = try repository.erase();refreshReminders()}
+    func connect(_ state:CloudState, uploadLocal:Bool) throws {
+        guard !readOnly else {throw WeddingError.invalid("Ripristina prima l’archivio locale.")}
+        // Save a portable backup before the first link. It never contains tokens or sync metadata.
+        let backupData = try backup()
+        try FileManager.default.createDirectory(at:repository.directory,withIntermediateDirectories:true)
+        try backupData.write(to:repository.directory.appendingPathComponent("prima-condivisione.json"),options:[.atomic,.completeFileProtection])
+        try cloudUpdate {archive in
+            var newState = state
+            if uploadLocal {let records = try CloudProjection.records(archive);newState.pending = records.values.sorted {$0.id < $1.id}.map {CloudMutation(key:$0.id,desired:$0,keys:Set($0.fields.keys))}}
+            archive.cloud = newState
+        }
     }
     func money(_ value: Int64) -> String { Money.format(value, currency: db.settings.currency) }
     func setReminders(_ enabled: Bool) {

@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function verified() { return request.auth != null && request.auth.token.email_verified == true; }
+    function member(wid) {
+      return verified() && request.auth.uid in get(/databases/$(database)/documents/weddings/$(wid)).data.members;
+    }
+    function invitee(invite) {
+      return verified() && request.auth.token.email.lower() == invite.email && request.time < invite.expiresAt;
+    }
+    function acceptedInvite(wid) {
+      let old = resource.data;
+      let invite = get(/databases/$(database)/documents/invites/$(old.inviteID)).data;
+      let accepted = getAfter(/databases/$(database)/documents/invites/$(old.inviteID)).data;
+      return old.ready == true && old.members.size() == 1 && invite.weddingID == wid
+        && invite.ownerID == old.ownerID && invite.usedBy == null && invitee(invite)
+        && accepted.usedBy == request.auth.uid
+        && request.resource.data.members == [old.ownerID, request.auth.uid]
+        && request.resource.data.diff(old).affectedKeys().hasOnly(['members']);
+    }
+    match /profiles/{uid} {
+      allow get: if verified() && request.auth.uid == uid;
+      allow list: if false;
+      allow create, update: if verified() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['weddingID'])
+        && request.resource.data.weddingID is string
+        && uid in getAfter(/databases/$(database)/documents/weddings/$(request.resource.data.weddingID)).data.members;
+      allow delete: if verified() && request.auth.uid == uid;
+    }
+    match /weddings/{wid} {
+      allow get: if verified() && (!exists(/databases/$(database)/documents/weddings/$(wid)) || request.auth.uid in resource.data.members);
+      allow list, delete: if false;
+      allow create: if verified()
+        && request.resource.data.keys().hasOnly(['ownerID','members','ready','inviteID','createdAt'])
+        && request.resource.data.ownerID == request.auth.uid
+        && request.resource.data.members == [request.auth.uid]
+        && request.resource.data.ready == false
+        && request.resource.data.inviteID == ''
+        && request.resource.data.createdAt == request.time;
+      allow update: if verified() && (
+        (resource.data.ownerID == request.auth.uid
+          && request.resource.data.ownerID == resource.data.ownerID
+          && request.resource.data.members == resource.data.members
+          && request.resource.data.ready is bool
+          && (request.resource.data.ready == true || resource.data.ready == false)
+          && request.resource.data.inviteID is string
+          && request.resource.data.inviteID.size() <= 64
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ready','inviteID']))
+        || acceptedInvite(wid));
+      match /records/{rid} {
+        allow read: if member(wid);
+        allow create, update: if member(wid)
+          && request.resource.data.keys().hasOnly(['kind','fields','deleted','updatedBy','updatedAt'])
+          && request.resource.data.kind in ['settings','order','task','vendor','expense','payment','guest','table','schedule','note']
+          && request.resource.data.fields is map && request.resource.data.fields.size() <= 40
+          && request.resource.data.deleted is bool
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time;
+        // Tombstones are durable: stale offline clients cannot silently recreate a deleted row.
+        allow delete: if false;
+      }
+    }
+    match /invites/{code} {
+      allow get: if verified() && (request.auth.uid == resource.data.ownerID || invitee(resource.data));
+      allow list, delete: if false;
+      allow create: if verified() && code.matches('[0-9a-f]{64}')
+        && request.resource.data.keys().hasOnly(['weddingID','ownerID','email','expiresAt','usedBy'])
+        && request.resource.data.ownerID == request.auth.uid
+        && request.resource.data.email is string && request.resource.data.email.size() <= 320
+        && request.resource.data.email == request.resource.data.email.lower()
+        && request.resource.data.usedBy == null
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt < request.time + duration.value(3,'d')
+        && get(/databases/$(database)/documents/weddings/$(request.resource.data.weddingID)).data.ownerID == request.auth.uid
+        && getAfter(/databases/$(database)/documents/weddings/$(request.resource.data.weddingID)).data.inviteID == code;
+      allow update: if invitee(resource.data)
+        && resource.data.usedBy == null && request.resource.data.usedBy == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedBy'])
+        && get(/databases/$(database)/documents/weddings/$(resource.data.weddingID)).data.inviteID == code
+        && request.auth.uid in getAfter(/databases/$(database)/documents/weddings/$(resource.data.weddingID)).data.members;
+    }
+    match /{document=**} {allow read, write: if false;}
+  }
+}

@@ -77,6 +77,7 @@ struct WeddingNote: Codable, Identifiable, Equatable {
 }
 struct WeddingArchive: Codable, Equatable {
     var schema = 1; var settings = WeddingSettings()
+    var cloud: CloudState?
     var tasks: [WeddingTask] = []; var vendors: [Vendor] = []; var expenses: [Expense] = []
     var guests: [Guest] = []; var tables: [WeddingTable] = []; var schedule: [ScheduleEntry] = []; var notes: [WeddingNote] = []
     var planned: Int64 { expenses.reduce(0) { $0 + $1.planned } }
@@ -118,6 +119,10 @@ struct WeddingArchive: Codable, Equatable {
         ids.append(contentsOf:notes.map(\.id))
         for expense in expenses { ids.append(contentsOf:expense.payments.map(\.id)) }
         try require(schema == 1, "Versione del backup non supportata.")
+        if let cloud {
+            try require(!cloud.accountID.isEmpty && cloud.accountID.count <= 128 && UUID(uuidString:cloud.weddingID) != nil && cloud.pending.count <= 50_000 && cloud.records.count <= 50_000, "Metadati di condivisione non validi o troppo grandi.")
+            try require(Set(cloud.pending.map(\.key)).count == cloud.pending.count && cloud.records.allSatisfy({$0.key == $0.value.id}),"Coda di sincronizzazione non valida.")
+        }
         try require(ids.count <= 50_000 && Set(ids).count == ids.count, "Archivio troppo grande o identificativi duplicati.")
         try require(title(settings.names) && text(settings.location) && date(settings.date) && ["EUR", "USD", "GBP", "CHF", "CAD", "AUD", "JPY"].contains(settings.currency) && money(settings.budget) && settings.categoryBudgets.allSatisfy { Category(rawValue: $0.key) != nil && money($0.value) }, "Impostazioni o budget non validi.")
         let vendorIDs = Set(vendors.map(\.id)), tableIDs = Set(tables.map(\.id))

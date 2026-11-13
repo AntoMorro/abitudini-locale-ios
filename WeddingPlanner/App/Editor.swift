@@ -4,6 +4,7 @@ struct EntityEditor: View {
     @EnvironmentObject var store: WeddingStore
     @Environment(\.dismiss) private var dismiss
     let request: EditRequest
+    @State private var baseline:WeddingArchive
     @State private var task: WeddingTask
     @State private var guest: Guest
     @State private var vendor: Vendor
@@ -18,6 +19,7 @@ struct EntityEditor: View {
     @State private var pendingPaymentDelete: UUID?
     init(_ request: EditRequest, archive: WeddingArchive) {
         self.request = request
+        _baseline = State(initialValue:archive)
         _task = State(initialValue:archive.tasks.first { $0.id == request.objectID } ?? WeddingTask())
         _guest = State(initialValue:archive.guests.first { $0.id == request.objectID } ?? Guest())
         _vendor = State(initialValue:archive.vendors.first { $0.id == request.objectID } ?? Vendor())
@@ -115,7 +117,15 @@ struct EntityEditor: View {
     private func upsert<T:Identifiable>(_ item:T, in list:inout [T]) { if let i = list.firstIndex(where:{$0.id == item.id}) { list[i] = item } else { list.append(item) } }
     private func save() {
         if paymentAmount > 0 && request.kind == .expense { store.error = "Premi prima Aggiungi al registro, oppure azzera Nuovo pagamento."; return }
-        let ok = store.change { db in switch request.kind { case .task: upsert(task,in:&db.tasks); case .guest: upsert(guest,in:&db.guests); case .vendor: upsert(vendor,in:&db.vendors); case .expense: upsert(expense,in:&db.expenses); case .table: upsert(table,in:&db.tables); case .schedule: upsert(entry,in:&db.schedule); case .note: upsert(note,in:&db.notes) } }
+        let ok = store.change { db in switch request.kind {
+        case .task:try DraftMerge.upsert(task,original:baseline.tasks.first {$0.id == task.id},in:&db.tasks)
+        case .guest:try DraftMerge.upsert(guest,original:baseline.guests.first {$0.id == guest.id},in:&db.guests)
+        case .vendor:try DraftMerge.upsert(vendor,original:baseline.vendors.first {$0.id == vendor.id},in:&db.vendors)
+        case .expense:try DraftMerge.upsert(expense,original:baseline.expenses.first {$0.id == expense.id},in:&db.expenses)
+        case .table:try DraftMerge.upsert(table,original:baseline.tables.first {$0.id == table.id},in:&db.tables)
+        case .schedule:try DraftMerge.upsert(entry,original:baseline.schedule.first {$0.id == entry.id},in:&db.schedule)
+        case .note:try DraftMerge.upsert(note,original:baseline.notes.first {$0.id == note.id},in:&db.notes)
+        } }
         if ok { dismiss() }
     }
     private func delete() {

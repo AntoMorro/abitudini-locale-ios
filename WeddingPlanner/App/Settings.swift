@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct SettingsView:View {
     @EnvironmentObject var store:WeddingStore
     @State private var settings = WeddingSettings(); @State private var loaded = false
+    @State private var baseline = WeddingSettings()
     @State private var document = WeddingDocument(Data()); @State private var exporting = false; @State private var exportType = UTType.json; @State private var exportName = "Promessa-backup"
     @State private var importing = false; @State private var pendingData:Data?; @State private var pendingSummary = ""
     @State private var restoring = false; @State private var deleting = false
@@ -31,15 +32,17 @@ struct SettingsView:View {
                 Text("Solo attività aperte e saldi non pagati; sono programmate le prossime 60 scadenze. Apri l’app periodicamente per aggiornare l’elenco. Contenuto visibile nelle notifiche secondo le impostazioni di iOS.").font(.caption).foregroundStyle(.secondary)
             }
             Section("Dati e backup") {
+                NavigationLink {SharingView()} label:{Label("Condividi con il partner",systemImage:"person.2")}
                 Button {do {startExport(try store.backup(),type:.json,name:"Promessa-backup")} catch {store.error = error.localizedDescription}} label:{Label(store.readOnly ? "Esporta archivio originale" : "Esporta backup completo",systemImage:"square.and.arrow.up")}.accessibilityIdentifier("exportBackup")
                 Button {importing = true} label:{Label("Importa backup",systemImage:"square.and.arrow.down")}
                 Button {startExport(Data(("\u{FEFF}" + WeddingExport.guests(store.db)).utf8),type:.commaSeparatedText,name:"Promessa-invitati")} label:{Label("Esporta invitati CSV",systemImage:"person.2")}.disabled(store.readOnly)
                 Button {startExport(Data(("\u{FEFF}" + WeddingExport.schedule(store.db)).utf8),type:.commaSeparatedText,name:"Promessa-programma")} label:{Label("Esporta programma CSV",systemImage:"clock")}.disabled(store.readOnly)
-                Text("Archivio JSON nella cartella privata Application Support/Promessa dell’app. Ogni salvataggio conserva la versione precedente. Esporta i backup in File, anche su iCloud Drive se lo scegli: l’app non sincronizza né invia dati. I file esportati includono dati personali e allergie degli invitati; conservali con cura.").font(.caption).foregroundStyle(.secondary)
+                Text("Archivio JSON privato sul telefono. Ogni salvataggio conserva la versione precedente. La condivisione Firebase, se attivata, sincronizza i dati con il partner; i backup esportati in File restano copie manuali. I file includono dati personali e allergie: conservali con cura.").font(.caption).foregroundStyle(.secondary)
+                Button("Esporta backup prima della condivisione") {do {let base = FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0];let data = try Data(contentsOf:base.appendingPathComponent("Promessa/prima-condivisione.json"));startExport(data,type:.json,name:"Promessa-prima-condivisione")} catch {store.error = "Nessun backup precedente alla condivisione disponibile."}}
                 Button("Esporta versione precedente") {do {let base = FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0];let data = try Data(contentsOf:base.appendingPathComponent("Promessa/promessa.previous.json"));startExport(data,type:.json,name:"Promessa-backup-precedente")} catch {store.error = "Nessuna versione precedente disponibile."}}
             }
-            Section {Button("Elimina tutti i dati",role:.destructive) {deleting = true}.disabled(store.readOnly);Text("Promessa 1.0 · iOS 17 o successivo. Nessun analytics, account o servizio di intelligenza artificiale.").font(.caption).foregroundStyle(.secondary)}
-        }.navigationTitle("Impostazioni").toolbar {ToolbarItem(placement:.topBarTrailing) {Button("Salva",action:saveSettings).bold().disabled(store.readOnly)}}.onAppear {if !loaded {settings = store.db.settings;loaded = true}}
+            Section {Button("Elimina tutti i dati locali",role:.destructive) {deleting = true}.disabled(store.readOnly);Text("Promessa 1.1 · iOS 17 o successivo. Condivisione Firebase facoltativa; nessun analytics o servizio AI.").font(.caption).foregroundStyle(.secondary)}
+        }.navigationTitle("Impostazioni").toolbar {ToolbarItem(placement:.topBarTrailing) {Button("Salva",action:saveSettings).bold().disabled(store.readOnly)}}.onAppear {if !loaded {settings = store.db.settings;baseline = settings;loaded = true}}
         .fileExporter(isPresented:$exporting,document:document,contentType:exportType,defaultFilename:exportName) {result in if case .failure(let e) = result {store.error = e.localizedDescription}}
         .fileImporter(isPresented:$importing,allowedContentTypes:[.json]) {result in
             do {let url = try result.get();let granted = url.startAccessingSecurityScopedResource();defer {if granted {url.stopAccessingSecurityScopedResource()}};guard (try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0) < 20_000_000 else {throw WeddingError.invalid("Backup troppo grande.")};let data = try Data(contentsOf:url);let archive = try WeddingRepository.decode(data);pendingData = data;pendingSummary = "\(archive.settings.names): \(archive.guests.count) invitati, \(archive.tasks.count) attività, \(archive.expenses.count) spese. L’archivio attuale sarà sostituito, non unito. Esporta prima un backup.";restoring = true} catch {store.error = "Importazione annullata: \(error.localizedDescription)"}
@@ -48,7 +51,7 @@ struct SettingsView:View {
         .alert("Eliminare tutti i dati?",isPresented:$deleting) {Button("Annulla",role:.cancel) {};Button("Elimina tutto",role:.destructive) {if store.erase() {settings = store.db.settings}}} message:{Text("Invitati, attività, spese, fornitori, tavoli, programma, note e copia locale precedente verranno cancellati. Esporta prima un backup. I backup già esportati restano in File.")}
     }
     private func startExport(_ data:Data,type:UTType,name:String) {document = WeddingDocument(data);exportType = type;exportName = name;exporting = true}
-    private func saveSettings() {let reminders = store.db.settings.reminders;if store.change({$0.settings = settings;$0.settings.reminders = reminders}) {settings = store.db.settings}}
+    private func saveSettings() {let reminders = store.db.settings.reminders;if store.change({$0.settings = try DraftMerge.merge(baseline,edited:settings,current:$0.settings);$0.settings.reminders = reminders}) {settings = store.db.settings;baseline = settings}}
 }
 struct GlobalSearchView:View {
     @EnvironmentObject var store:WeddingStore; @State private var search = ""; @State private var edit:EditRequest?
