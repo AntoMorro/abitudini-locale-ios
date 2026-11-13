@@ -1,0 +1,99 @@
+name: Promessa · Wedding planner
+on:
+  push:
+    branches: [promessa-wedding]
+    paths: ['WeddingPlanner/**', '.github/workflows/promessa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: promessa-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+jobs:
+  build:
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: WeddingPlanner
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core tests
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee core-tests.log
+      - name: Xcode project
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate --spec project.json
+      - name: Native iPhone release
+        run: |
+          set -o pipefail
+          xcodebuild build -project Promessa.xcodeproj -scheme Promessa -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/device CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO 2>&1 | tee build-device.log
+      - name: Package IPA and sources
+        run: |
+          mkdir -p build/package/Payload
+          cp -R build/device/Build/Products/Release-iphoneos/Promessa.app build/package/Payload/
+          cd build/package
+          zip -qry Promessa-unsigned.ipa Payload
+          cd ../..
+          git archive HEAD WeddingPlanner .github/workflows/promessa.yml -o build/package/Promessa-Sorgenti.zip
+          python3 - <<'PY'
+          import json, hashlib, pathlib, os
+          p=pathlib.Path('build/package')
+          data={'commit':os.environ['GITHUB_SHA'],'run':os.environ['GITHUB_RUN_ID'],'files':{f.name:hashlib.sha256(f.read_bytes()).hexdigest() for f in p.glob('*.ipa')}}
+          (p/'VERIFICA.json').write_text(json.dumps(data,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Promessa-IPA
+          path: |
+            WeddingPlanner/build/package/Promessa-unsigned.ipa
+            WeddingPlanner/build/package/Promessa-Sorgenti.zip
+            WeddingPlanner/build/package/VERIFICA.json
+            WeddingPlanner/README.md
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: Promessa-build-logs
+          path: WeddingPlanner/*.log
+  ui:
+    runs-on: macos-15-intel
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: WeddingPlanner
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare native UI tests
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate --spec project.json
+          python3 scripts/select_simulator.py >> "$GITHUB_ENV"
+      - name: Compile UI tests
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing -project Promessa.xcodeproj -scheme Promessa -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath build/simulator CODE_SIGNING_ALLOWED=NO 2>&1 | tee build-ui-compile.log
+      - name: Boot simulator
+        run: |
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          open -a Simulator --args -CurrentDeviceUDID "$SIMULATOR_ID"
+      - name: Exercise native screens
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building -project Promessa.xcodeproj -scheme Promessa -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -parallel-testing-enabled NO -derivedDataPath build/simulator -resultBundlePath build/UITests.xcresult CODE_SIGNING_ALLOWED=NO 2>&1 | tee ui-tests.log
+      - name: Export screenshots
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p build/screenshots
+          if [ -d build/UITests.xcresult ]; then xcrun xcresulttool export attachments --path build/UITests.xcresult --output-path build/screenshots; fi
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: Promessa-UI
+          path: |
+            WeddingPlanner/build/screenshots
+            WeddingPlanner/*ui*.log
