@@ -18,6 +18,7 @@ import UniformTypeIdentifiers
     }
     @discardableResult func change(_ body: (inout WeddingArchive) throws -> Void) -> Bool {
         guard !readOnly else { error = "Archivio in sola lettura: ripristina un backup valido."; return false }
+        guard db.cloud?.awaitingInitialData != true else {error = "Attendi il primo download del matrimonio condiviso prima di modificarlo. Il backup precedente è conservato.";return false}
         do {
             db = try repository.update { archive in
                 let before = archive
@@ -52,9 +53,7 @@ import UniformTypeIdentifiers
         let meaningful = !db.tasks.isEmpty || !db.guests.isEmpty || !db.vendors.isEmpty || !db.expenses.isEmpty || !db.notes.isEmpty || !db.schedule.isEmpty || !db.tables.isEmpty || db.settings != WeddingSettings()
         if meaningful || !FileManager.default.fileExists(atPath:personalBackup.path) {try backupData.write(to:personalBackup,options:[.atomic,.completeFileProtection])}
         try cloudUpdate {archive in
-            var newState = state
-            if uploadLocal {let records = try CloudProjection.records(archive);newState.pending = records.values.sorted {$0.id < $1.id}.map {CloudMutation(key:$0.id,desired:$0,keys:Set($0.fields.keys))}}
-            archive.cloud = newState
+            archive = try CloudProjection.attach(state,to:archive,uploadLocal:uploadLocal)
         }
     }
     func money(_ value: Int64) -> String { Money.format(value, currency: db.settings.currency) }

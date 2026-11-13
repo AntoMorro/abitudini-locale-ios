@@ -29,6 +29,7 @@ struct CloudState: Codable, Equatable {
     var pending: [CloudMutation] = []
     var lastServerSync: Date?
     var ready = false
+    var awaitingInitialData:Bool {ready && records["settings"] == nil && pending.isEmpty}
     var viewRecords:[String:CloudRecord] {
         var result = records
         for mutation in pending {result[mutation.key] = CloudMerge.applying(mutation,to:result[mutation.key])}
@@ -156,6 +157,14 @@ enum CloudMerge {
     }
 }
 enum CloudProjection {
+    static func attach(_ state:CloudState,to local:WeddingArchive,uploadLocal:Bool) throws -> WeddingArchive {
+        var result = uploadLocal ? local:WeddingArchive()
+        result.settings.reminders = local.settings.reminders
+        var state = state
+        if uploadLocal {let rows = try records(local);state.pending = rows.values.sorted {$0.id < $1.id}.map {CloudMutation(key:$0.id,desired:$0,keys:Set($0.fields.keys))}}
+        result.cloud = state
+        return try result.validated()
+    }
     private static func fields<T:Encodable>(_ object:T) throws -> [String:String] {
         let encoded = try JSONEncoder().encode(object)
         guard let raw = try JSONSerialization.jsonObject(with:encoded) as? [String:Any] else {throw WeddingError.invalid("Formato condiviso non valido.")}
