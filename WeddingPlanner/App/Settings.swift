@@ -15,14 +15,15 @@ struct SettingsView:View {
                 TextField("Luogo",text:$settings.location)
             }
             Section("Budget") {
-                Picker("Valuta",selection:$settings.currency) {ForEach(["EUR","USD","GBP","CHF","CAD","AUD","JPY"],id:\.self) {Text($0)}}.onChange(of:settings.currency) {old,new in
-                    if old != new && (store.db.settings.budget > 0 || !store.db.expenses.isEmpty || store.db.vendors.contains {$0.cost > 0} || store.db.settings.categoryBudgets.values.contains {$0 > 0} || settings.budget > 0 || settings.categoryBudgets.values.contains {$0 > 0}) {settings.currency = old;store.error = "Per cambiare valuta l’archivio deve essere privo di importi. Non viene effettuata alcuna conversione. Esporta prima un backup."}
-                }
+                Picker("Valuta",selection:Binding(get:{settings.currency},set:{new in
+                    guard new != settings.currency else {return}
+                    if store.db.settings.budget > 0 || !store.db.expenses.isEmpty || store.db.vendors.contains(where:{$0.cost > 0}) || store.db.settings.categoryBudgets.values.contains(where:{$0 > 0}) || settings.budget > 0 || settings.categoryBudgets.values.contains(where:{$0 > 0}) {store.error = "Per cambiare valuta l’archivio deve essere privo di importi. Non viene effettuata alcuna conversione. Esporta prima un backup."} else {settings.currency = new}
+                })) {ForEach(["EUR","USD","GBP","CHF","CAD","AUD","JPY"],id:\.self) {Text($0)}}
                 AmountField(title:"Budget totale",amount:$settings.budget,currency:settings.currency).id("total-" + settings.currency)
                 ForEach(Category.allCases) {c in AmountField(title:c.rawValue,amount:Binding(get:{settings.categoryBudgets[c.rawValue] ?? 0},set:{settings.categoryBudgets[c.rawValue] = $0}),currency:settings.currency).id(c.rawValue + settings.currency)}
                 let categories = settings.categoryBudgets.values.reduce(Int64(0),+)
                 if categories > settings.budget {Text("I budget di categoria superano il budget totale di \(Money.format(categories-settings.budget,currency:settings.currency)).").font(.caption).foregroundStyle(.orange)}
-                Button("Salva impostazioni") {let reminders = store.db.settings.reminders; if store.change({$0.settings = settings;$0.settings.reminders = reminders}) {settings = store.db.settings} }.accessibilityIdentifier("saveSettings")
+                Button("Salva impostazioni",action:saveSettings).accessibilityIdentifier("saveSettings")
                 Text("La valuta cambia solo l’unità del registro; non sono disponibili cambi o conversioni. Salva anche i cambiamenti a nomi, data e luogo con questo pulsante.").font(.caption).foregroundStyle(.secondary)
             }.disabled(store.readOnly)
             Section("Promemoria locali") {
@@ -38,7 +39,7 @@ struct SettingsView:View {
                 Button("Esporta versione precedente") {do {let base = FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0];let data = try Data(contentsOf:base.appendingPathComponent("Promessa/promessa.previous.json"));startExport(data,type:.json,name:"Promessa-backup-precedente")} catch {store.error = "Nessuna versione precedente disponibile."}}
             }
             Section {Button("Elimina tutti i dati",role:.destructive) {deleting = true}.disabled(store.readOnly);Text("Promessa 1.0 · iOS 17 o successivo. Nessun analytics, account o servizio di intelligenza artificiale.").font(.caption).foregroundStyle(.secondary)}
-        }.navigationTitle("Impostazioni").onAppear {if !loaded {settings = store.db.settings;loaded = true}}
+        }.navigationTitle("Impostazioni").toolbar {ToolbarItem(placement:.topBarTrailing) {Button("Salva",action:saveSettings).bold().disabled(store.readOnly)}}.onAppear {if !loaded {settings = store.db.settings;loaded = true}}
         .fileExporter(isPresented:$exporting,document:document,contentType:exportType,defaultFilename:exportName) {result in if case .failure(let e) = result {store.error = e.localizedDescription}}
         .fileImporter(isPresented:$importing,allowedContentTypes:[.json]) {result in
             do {let url = try result.get();let granted = url.startAccessingSecurityScopedResource();defer {if granted {url.stopAccessingSecurityScopedResource()}};guard (try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0) < 20_000_000 else {throw WeddingError.invalid("Backup troppo grande.")};let data = try Data(contentsOf:url);let archive = try WeddingRepository.decode(data);pendingData = data;pendingSummary = "\(archive.settings.names): \(archive.guests.count) invitati, \(archive.tasks.count) attività, \(archive.expenses.count) spese. L’archivio attuale sarà sostituito, non unito. Esporta prima un backup.";restoring = true} catch {store.error = "Importazione annullata: \(error.localizedDescription)"}
@@ -47,6 +48,7 @@ struct SettingsView:View {
         .alert("Eliminare tutti i dati?",isPresented:$deleting) {Button("Annulla",role:.cancel) {};Button("Elimina tutto",role:.destructive) {if store.erase() {settings = store.db.settings}}} message:{Text("Invitati, attività, spese, fornitori, tavoli, programma, note e copia locale precedente verranno cancellati. Esporta prima un backup. I backup già esportati restano in File.")}
     }
     private func startExport(_ data:Data,type:UTType,name:String) {document = WeddingDocument(data);exportType = type;exportName = name;exporting = true}
+    private func saveSettings() {let reminders = store.db.settings.reminders;if store.change({$0.settings = settings;$0.settings.reminders = reminders}) {settings = store.db.settings}}
 }
 struct GlobalSearchView:View {
     @EnvironmentObject var store:WeddingStore; @State private var search = ""; @State private var edit:EditRequest?

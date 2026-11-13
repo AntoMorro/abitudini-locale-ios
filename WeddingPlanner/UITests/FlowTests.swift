@@ -4,12 +4,16 @@ final class FlowTests:XCTestCase {
     override func setUpWithError() throws {continueAfterFailure = false;app = XCUIApplication();app.launchArguments = ["--ui-testing"];app.launch()}
     func shot(_ name:String) {let a = XCTAttachment(screenshot:app.screenshot());a.name = name;a.lifetime = .keepAlways;add(a)}
     func openTab(_ name:String) {app.tabBars.buttons[name].tap()}
-    func save(_ title:String) {let field = app.textFields["entityTitle"];XCTAssertTrue(field.waitForExistence(timeout:5));field.tap();field.typeText(title);app.buttons["saveEntity"].tap();XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout:5))}
+    func save(_ title:String) {let field = app.textFields["entityTitle"];XCTAssertTrue(field.waitForExistence(timeout:5));field.tap();field.typeText(title);app.buttons["saveEntity"].tap();XCTAssertTrue(app.staticTexts[title].firstMatch.waitForExistence(timeout:5))}
     func testRealEntryFlowsAndSeating() {
         shot("01-riepilogo-vuoto")
         openTab("Attività");app.buttons["addTask"].tap();save("Confermare cerimonia");shot("02-checklist")
         openTab("Invitati");app.buttons["addGuest"].tap();save("Anna Prova");shot("03-invitati")
-        openTab("Budget");app.buttons["addExpense"].tap();save("Fiori cerimonia");shot("04-budget")
+        openTab("Budget");app.buttons["addExpense"].tap()
+        let amount = app.textFields["Previsione"];XCTAssertTrue(amount.waitForExistence(timeout:5))
+        amount.coordinate(withNormalizedOffset:CGVector(dx:0.98,dy:0.5)).tap()
+        amount.typeText(String(repeating:XCUIKeyboardKey.delete.rawValue,count:12) + "250,00")
+        save("Fiori cerimonia");XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS %@","250,00")).firstMatch.exists);shot("04-budget")
         openTab("Organizza");app.buttons["Sala e tavoli"].tap();app.buttons["addTable"].tap();save("Rosa");shot("05-pianta")
         app.buttons.containing(.staticText,identifier:"Rosa").firstMatch.tap()
         XCTAssertTrue(app.buttons.containing(.staticText,identifier:"Anna Prova").firstMatch.waitForExistence(timeout:5));app.buttons.containing(.staticText,identifier:"Anna Prova").firstMatch.tap();shot("06-assegnazione")
