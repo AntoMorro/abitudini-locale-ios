@@ -3,8 +3,14 @@ import SwiftUI
 struct SharingView:View {
     @EnvironmentObject var store:WeddingStore
     @EnvironmentObject var sharing:SharingService
-    @State private var email = "",password = "",partnerEmail = "",code = ""
-    @State private var register = false,creating = false,joining = false,leaving = false
+    @State private var email = ""
+    @State private var password = ""
+    @State private var partnerEmail = ""
+    @State private var code = ""
+    @State private var register = false
+    @State private var creating = false
+    @State private var joining = false
+    @State private var leaving = false
     @State private var revoking = false
     var body:some View {
         List {
@@ -70,7 +76,8 @@ struct ConflictView:View {
     @EnvironmentObject var sharing:SharingService
     @Environment(\.dismiss) private var dismiss
     let conflict:CloudConflict
-    @State private var keep:Bool?,confirming = false
+    @State private var keep:Bool?
+    @State private var confirming = false
     var body:some View {
         List {
             Section {Text("Avete modificato lo stesso campo o eliminato una voce mentre l’altro la modificava. Nessuna delle due versioni è stata sovrascritta automaticamente.");Text("Campi: " + conflict.fields.joined(separator:", ")).foregroundStyle(.orange)}

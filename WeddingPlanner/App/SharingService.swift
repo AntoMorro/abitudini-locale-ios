@@ -33,7 +33,7 @@ import Security
         guard !ProcessInfo.processInfo.arguments.contains("--ui-testing") else {return}
         if FirebaseApp.app() == nil {
             guard let path = Bundle.main.path(forResource:"GoogleService-Info",ofType:"plist"),let options = FirebaseOptions(contentsOfFile:path) else {status = "Firebase non configurato";return}
-            options.bundleID = Bundle.main.bundleIdentifier
+            options.bundleID = Bundle.main.bundleIdentifier ?? "local.promessa.wedding"
             FirebaseApp.configure(options:options)
         }
         if firestore == nil {
